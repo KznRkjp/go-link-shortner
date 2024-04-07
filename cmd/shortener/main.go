@@ -42,10 +42,10 @@ func returnURL(res http.ResponseWriter, req *http.Request) {
 	}
 	shortURL := strings.Trim(req.RequestURI, "/")
 	// var result bool
-	resUrl, ok := URLDb[shortURL]
+	resURL, ok := URLDb[shortURL]
 	// If the key exists
 	if ok {
-		res.Header().Set("Location", resUrl)
+		res.Header().Set("Location", resURL)
 		res.WriteHeader(http.StatusTemporaryRedirect)
 		return
 		// Do something
