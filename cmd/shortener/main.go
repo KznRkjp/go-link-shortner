@@ -23,9 +23,9 @@ func mainPage(res http.ResponseWriter, req *http.Request) {
 	url := generateShortKey()       // генерируем короткую ссылку
 	URLDb[url] = string(body)       // записываем в нашу БД
 
-	for key, element := range URLDb {
-		fmt.Println("Key:", key, "=>", "Element:", element)
-	}
+	// for key, element := range URLDb {
+	// 	fmt.Println("Key:", key, "=>", "Element:", element)
+	// }
 
 	resultURL := "http://" + host + "/" + url //  склеиваем ответ
 	res.Header().Set("content-type", "text/plain")
@@ -58,10 +58,11 @@ func generateShortKey() string {
 	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	const keyLength = 8
 
-	rand.Seed(time.Now().UnixNano())
+	source := rand.NewSource(time.Now().UnixNano())
+	rng := rand.New(source)
 	shortKey := make([]byte, keyLength)
 	for i := range shortKey {
-		shortKey[i] = charset[rand.Intn(len(charset))]
+		shortKey[i] = charset[rng.Intn(len(charset))]
 	}
 	return string(shortKey)
 }
