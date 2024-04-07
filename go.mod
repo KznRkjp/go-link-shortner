@@ -1,3 +1,3 @@
 module github.com/KznRkjp/go-link-shortner.git
 
-go 1.21.9
+go 1.22
