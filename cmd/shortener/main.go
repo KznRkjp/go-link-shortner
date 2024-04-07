@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"math/rand"
 	"net/http"
 	"strings"
@@ -18,10 +18,10 @@ func mainPage(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	host := req.Host                    // получаем значение нашего хоста
-	body, _ := ioutil.ReadAll(req.Body) // достаем данные из body
-	url := generateShortKey()           // генерируем короткую ссылку
-	URLDb[url] = string(body)           // записываем в нашу БД
+	host := req.Host                // получаем значение нашего хоста
+	body, _ := io.ReadAll(req.Body) // достаем данные из body
+	url := generateShortKey()       // генерируем короткую ссылку
+	URLDb[url] = string(body)       // записываем в нашу БД
 
 	// for key, element := range URLDb {
 	// 	fmt.Println("Key:", key, "=>", "Element:", element)
