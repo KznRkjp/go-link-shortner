@@ -34,11 +34,18 @@ func mainPage(res http.ResponseWriter, req *http.Request) {
 }
 
 func returnUrl(res http.ResponseWriter, req *http.Request) {
+	fmt.Println("test")
 	if req.Method != http.MethodGet { // Обрабатываем POST-запрос
 		res.WriteHeader(http.StatusBadRequest)
+		fmt.Println("ddd")
 		return
 	}
+	fmt.Println("sdsdscc")
 	shortUrl := strings.Trim(req.RequestURI, "/")
+	// var result bool
+	fmt.Println(shortUrl)
+	result := URLDb[shortUrl]
+	fmt.Println(result)
 	if shortUrl == "EwHXdJfB" {
 		res.Header().Set("Location", "https://practicum.yandex.ru/")
 		res.WriteHeader(http.StatusTemporaryRedirect)
@@ -62,7 +69,7 @@ func generateShortKey() string {
 func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", mainPage)
-	mux.HandleFunc("/{id}", returnUrl)
+	mux.HandleFunc("/:slug", returnUrl)
 	fmt.Println("Server is listening...")
 	fmt.Println("Press Ctrl+C to stop")
 	err := http.ListenAndServe(`:8080`, mux)
