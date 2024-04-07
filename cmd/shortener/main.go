@@ -12,6 +12,7 @@ import (
 var URLDb = make(map[string]string)
 
 func mainPage(res http.ResponseWriter, req *http.Request) {
+	fmt.Println("mainPage")
 	if req.Method != http.MethodPost { // Обрабатываем POST-запрос
 		res.WriteHeader(http.StatusBadRequest)
 		return
@@ -34,24 +35,23 @@ func mainPage(res http.ResponseWriter, req *http.Request) {
 }
 
 func returnUrl(res http.ResponseWriter, req *http.Request) {
-	fmt.Println("test")
+	fmt.Println("returnURL")
 	if req.Method != http.MethodGet { // Обрабатываем POST-запрос
 		res.WriteHeader(http.StatusBadRequest)
-		fmt.Println("ddd")
 		return
 	}
-	fmt.Println("sdsdscc")
 	shortUrl := strings.Trim(req.RequestURI, "/")
 	// var result bool
-	fmt.Println(shortUrl)
-	result := URLDb[shortUrl]
-	fmt.Println(result)
-	if shortUrl == "EwHXdJfB" {
-		res.Header().Set("Location", "https://practicum.yandex.ru/")
+	resUrl, ok := URLDb[shortUrl]
+	// If the key exists
+	if ok {
+		res.Header().Set("Location", resUrl)
 		res.WriteHeader(http.StatusTemporaryRedirect)
 		return
+		// Do something
 	}
 	res.WriteHeader(http.StatusBadRequest)
+
 }
 
 func generateShortKey() string {
@@ -69,7 +69,7 @@ func generateShortKey() string {
 func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", mainPage)
-	mux.HandleFunc("/:slug", returnUrl)
+	mux.HandleFunc("/{id}", returnUrl)
 	fmt.Println("Server is listening...")
 	fmt.Println("Press Ctrl+C to stop")
 	err := http.ListenAndServe(`:8080`, mux)
