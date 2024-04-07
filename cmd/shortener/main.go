@@ -12,7 +12,7 @@ import (
 var URLDb = make(map[string]string)
 
 func mainPage(res http.ResponseWriter, req *http.Request) {
-	fmt.Println("mainPage")
+	//fmt.Println("mainPage")
 	if req.Method != http.MethodPost { // Обрабатываем POST-запрос
 		res.WriteHeader(http.StatusBadRequest)
 		return
@@ -23,9 +23,9 @@ func mainPage(res http.ResponseWriter, req *http.Request) {
 	url := generateShortKey()       // генерируем короткую ссылку
 	URLDb[url] = string(body)       // записываем в нашу БД
 
-	// for key, element := range URLDb {
-	// 	fmt.Println("Key:", key, "=>", "Element:", element)
-	// }
+	for key, element := range URLDb {
+		fmt.Println("Key:", key, "=>", "Element:", element)
+	}
 
 	resultURL := "http://" + host + "/" + url //  склеиваем ответ
 	res.Header().Set("content-type", "text/plain")
@@ -35,7 +35,7 @@ func mainPage(res http.ResponseWriter, req *http.Request) {
 }
 
 func returnURL(res http.ResponseWriter, req *http.Request) {
-	fmt.Println("returnURL")
+	// fmt.Println("returnURL")
 	if req.Method != http.MethodGet { // Обрабатываем POST-запрос
 		res.WriteHeader(http.StatusBadRequest)
 		return
