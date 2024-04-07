@@ -27,22 +27,22 @@ func mainPage(res http.ResponseWriter, req *http.Request) {
 		fmt.Println("Key:", key, "=>", "Element:", element)
 	}
 
-	resultUrl := "http://" + host + "/" + url //  склеиваем ответ
+	resultURL := "http://" + host + "/" + url //  склеиваем ответ
 	res.Header().Set("content-type", "text/plain")
 	res.WriteHeader(http.StatusCreated)
-	res.Write([]byte(resultUrl))
+	res.Write([]byte(resultURL))
 	// return
 }
 
-func returnUrl(res http.ResponseWriter, req *http.Request) {
+func returnURL(res http.ResponseWriter, req *http.Request) {
 	fmt.Println("returnURL")
 	if req.Method != http.MethodGet { // Обрабатываем POST-запрос
 		res.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	shortUrl := strings.Trim(req.RequestURI, "/")
+	shortURL := strings.Trim(req.RequestURI, "/")
 	// var result bool
-	resUrl, ok := URLDb[shortUrl]
+	resUrl, ok := URLDb[shortURL]
 	// If the key exists
 	if ok {
 		res.Header().Set("Location", resUrl)
@@ -69,7 +69,7 @@ func generateShortKey() string {
 func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", mainPage)
-	mux.HandleFunc("/{id}", returnUrl)
+	mux.HandleFunc("/{id}", returnURL)
 	fmt.Println("Server is listening...")
 	fmt.Println("Press Ctrl+C to stop")
 	err := http.ListenAndServe(`:8080`, mux)
