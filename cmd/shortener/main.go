@@ -23,10 +23,6 @@ func mainPage(res http.ResponseWriter, req *http.Request) {
 	url := generateShortKey()       // генерируем короткую ссылку
 	URLDb[url] = string(body)       // записываем в нашу БД
 
-	// for key, element := range URLDb {
-	// 	fmt.Println("Key:", key, "=>", "Element:", element)
-	// }
-
 	resultURL := "http://" + host + "/" + url //  склеиваем ответ
 	res.Header().Set("content-type", "text/plain")
 	res.WriteHeader(http.StatusCreated)
