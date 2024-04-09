@@ -124,6 +124,8 @@ func Test_returnURL(t *testing.T) {
 			returnURL(w, request)
 
 			res := w.Result()
+			defer res.Body.Close()
+
 			// проверяем код ответа
 			assert.Equal(t, test.args.code, res.StatusCode)
 			// проверяем ответную ссылку
