@@ -3,10 +3,13 @@ package main
 import (
 	"fmt"
 	"io"
+	"log"
 	"math/rand"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/go-chi/chi/v5"
 )
 
 var URLDb = make(map[string]string)
@@ -64,13 +67,10 @@ func generateShortKey() string {
 }
 
 func main() {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", mainPage)
-	mux.HandleFunc("/{id}", returnURL)
+	r := chi.NewRouter()
+	r.Post("/", mainPage)
+	r.Get("/{id}", returnURL)
 	fmt.Println("Server is listening...")
 	fmt.Println("Press Ctrl+C to stop")
-	err := http.ListenAndServe(`:8080`, mux)
-	if err != nil {
-		panic(err)
-	}
+	log.Fatal(http.ListenAndServe(":8080", r))
 }
