@@ -21,12 +21,12 @@ func mainPage(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	host := req.Host                // получаем значение нашего хоста
+	// host := req.Host                // получаем значение нашего хоста
 	body, _ := io.ReadAll(req.Body) // достаем данные из body
 	url := generateShortKey()       // генерируем короткую ссылку
 	URLDb[url] = string(body)       // записываем в нашу БД
 
-	resultURL := "http://" + host + "/" + url //  склеиваем ответ
+	resultURL := flagResURL + "/" + url //  склеиваем ответ
 	res.Header().Set("content-type", "text/plain")
 	res.WriteHeader(http.StatusCreated)
 	res.Write([]byte(resultURL))
@@ -67,10 +67,11 @@ func generateShortKey() string {
 }
 
 func main() {
+	parseFlags()
 	r := chi.NewRouter()
 	r.Post("/", mainPage)
 	r.Get("/{id}", returnURL)
-	fmt.Println("Server is listening...")
+	fmt.Println("Server is listening @", flagRunAddr)
 	fmt.Println("Press Ctrl+C to stop")
-	log.Fatal(http.ListenAndServe(":8080", r))
+	log.Fatal(http.ListenAndServe(flagRunAddr, r))
 }
