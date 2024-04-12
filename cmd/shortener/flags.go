@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"os"
 )
 
 // неэкспортированная переменная flagRunAddr содержит адрес и порт для запуска сервера
@@ -19,4 +20,11 @@ func parseFlags() {
 
 	// парсим переданные серверу аргументы в зарегистрированные переменные
 	flag.Parse()
+
+	if envRunAddr := os.Getenv("SERVER_ADDRESS"); envRunAddr != "" {
+		flagRunAddr = envRunAddr
+	}
+	if envResURL := os.Getenv("BASE_URL"); envResURL != "" {
+		flagResURL = envResURL
+	}
 }
