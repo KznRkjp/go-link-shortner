@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/KznRkjp/go-link-shortner.git/internal/app"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -50,7 +52,7 @@ func Test_mainPage_1(t *testing.T) {
 			request := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(test.args.url))
 			// создаём новый Recorder
 			w := httptest.NewRecorder()
-			mainPage(w, request)
+			app.GetURL(w, request)
 			res := w.Result()
 			// проверяем код ответа
 			assert.Equal(t, test.args.code, res.StatusCode)
@@ -82,7 +84,7 @@ func Test_mainPage_2(t *testing.T) {
 			request := httptest.NewRequest(http.MethodGet, "/", nil)
 			// создаём новый Recorder
 			w := httptest.NewRecorder()
-			mainPage(w, request)
+			app.GetURL(w, request)
 
 			res := w.Result()
 			// проверяем код ответа
@@ -116,12 +118,12 @@ func Test_returnURL(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			//Populate DB
-			URLDb["9JSpJWH612"] = "https://test-pass-ok.com"
+			app.URLDb["9JSpJWH612"] = "https://test-pass-ok.com"
 
 			request := httptest.NewRequest(http.MethodGet, test.args.urlPart, nil)
 			// создаём новый Recorder
 			w := httptest.NewRecorder()
-			returnURL(w, request)
+			app.ReturnURL(w, request)
 
 			res := w.Result()
 			defer res.Body.Close()
