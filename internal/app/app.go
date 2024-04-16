@@ -47,11 +47,12 @@ func ReturnURL(res http.ResponseWriter, req *http.Request) {
 	// If the key exists
 	if !ok {
 		res.WriteHeader(http.StatusBadRequest)
+		return
 	}
 
 	res.Header().Set("Location", resURL)
 	res.WriteHeader(http.StatusTemporaryRedirect)
-	return
+	// return
 
 }
 
