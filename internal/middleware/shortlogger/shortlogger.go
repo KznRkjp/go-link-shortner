@@ -45,6 +45,7 @@ func WithLogging(h http.Handler) http.Handler {
 		duration := time.Since(start)
 
 		// отправляем сведения о запросе в zap
+		defer Sugar.Sync()
 		Sugar.Infoln(
 			"uri", uri,
 			"method", method,
