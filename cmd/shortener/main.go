@@ -22,6 +22,7 @@ func main() {
 	// 	"Starting server",
 	// 	"addr", flags.FlagRunAddr,
 	// )
+	defer shortlogger.Sugar.Sync()
 	if err := http.ListenAndServe(flags.FlagRunAddr, dd); err != nil {
 		// записываем в лог ошибку, если сервер не запустился
 		shortlogger.Sugar.Fatalw(err.Error(), "event", "start server")
