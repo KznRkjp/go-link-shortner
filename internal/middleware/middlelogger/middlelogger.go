@@ -23,6 +23,7 @@ func ServerStartLog(addr string) {
 	)
 
 }
+1
 
 func ServerErrorLog(error string) {
 	// создаём предустановленный регистратор zap
