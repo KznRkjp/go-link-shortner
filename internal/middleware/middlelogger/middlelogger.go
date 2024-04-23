@@ -1,7 +1,6 @@
-package shortlogger
+package middlelogger
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
@@ -21,6 +20,23 @@ func ServerStartLog(addr string) {
 	sugar1.Infow(
 		"Starting server",
 		"addr", addr,
+	)
+
+}
+
+func ServerErrorLog(error string) {
+	// создаём предустановленный регистратор zap
+	var sugar1 zap.SugaredLogger
+	logger, err := zap.NewDevelopment()
+	if err != nil {
+		// вызываем панику, если ошибка
+		panic(err)
+	}
+	sugar1 = *logger.Sugar()
+	defer logger.Sync()
+	sugar1.Error(
+		"Server error",
+		"error", error,
 	)
 
 }
@@ -49,18 +65,17 @@ func WithLogging(h http.Handler) http.Handler {
 		// и моментом вызова Since. Таким образом можно посчитать
 		// время выполнения запроса.
 		duration := time.Since(start)
-		fmt.Println("here")
+		// fmt.Println("here")
 
 		// отправляем сведения о запросе в zap
 		// defer Sugar.Sync()
-		fmt.Println(uri, method, duration)
-
-		sugar.Infow(
+		// fmt.Println(uri, method, duration)
+		// defer sugar.Sync()
+		sugar.Infoln(
 			"uri", uri,
 			"method", method,
 			"duration", duration,
 		)
-		// defer Sugar.Sync()
 
 	}
 	// возвращаем функционально расширенный хендлер

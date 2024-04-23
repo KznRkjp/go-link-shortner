@@ -1,7 +1,6 @@
 package app
 
 import (
-	"fmt"
 	"io"
 	"math/rand"
 	"net/http"
@@ -14,7 +13,7 @@ import (
 var URLDb = make(map[string]string)
 
 func GetURL(res http.ResponseWriter, req *http.Request) {
-	fmt.Println("GetURL")
+	// fmt.Println("GetURL")
 	if req.Method != http.MethodPost { // Обрабатываем POST-запрос
 		res.WriteHeader(http.StatusBadRequest)
 		return
@@ -37,7 +36,7 @@ func GetURL(res http.ResponseWriter, req *http.Request) {
 }
 
 func ReturnURL(res http.ResponseWriter, req *http.Request) {
-	fmt.Println("ReturnURL")
+	// fmt.Println("ReturnURL")
 	if req.Method != http.MethodGet { // Обрабатываем POST-запрос
 		res.WriteHeader(http.StatusBadRequest)
 		return
