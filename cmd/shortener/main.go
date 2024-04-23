@@ -12,7 +12,7 @@ func main() {
 
 	flags.ParseFlags()
 	dd := router.Main()
-	shortlogger.ServerStartLog(flags.FlagRunAddr)
+	//shortlogger.ServerStartLog(flags.FlagRunAddr)
 
 	// fmt.Println("Server is listening @", flags.FlagRunAddr)
 	// fmt.Println("Press Ctrl+C to stop")
