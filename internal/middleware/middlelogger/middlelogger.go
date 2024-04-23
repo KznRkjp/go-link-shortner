@@ -65,12 +65,8 @@ func WithLogging(h http.Handler) http.Handler {
 		// и моментом вызова Since. Таким образом можно посчитать
 		// время выполнения запроса.
 		duration := time.Since(start)
-		// fmt.Println("here")
 
 		// отправляем сведения о запросе в zap
-		// defer Sugar.Sync()
-		// fmt.Println(uri, method, duration)
-		// defer sugar.Sync()
 		sugar.Infoln(
 			"uri", uri,
 			"method", method,
