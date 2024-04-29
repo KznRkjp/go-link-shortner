@@ -68,3 +68,11 @@ func generateShortKey() string {
 	}
 	return string(shortKey)
 }
+
+func ApiGetURL(res http.ResponseWriter, req *http.Request) {
+	if req.Method != http.MethodPost { // Обрабатываем POST-запрос
+		res.WriteHeader(http.StatusBadRequest)
+		return
+
+	}
+}
