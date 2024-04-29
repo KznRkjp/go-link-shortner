@@ -94,6 +94,7 @@ func APIGetURL(res http.ResponseWriter, req *http.Request) {
 		Result: resultURL,
 	}
 	res.Header().Set("Content-Type", "application/json")
+	res.WriteHeader(http.StatusCreated)
 	enc := json.NewEncoder(res)
 	if err := enc.Encode(resp); err != nil {
 		fmt.Println("Error encoding response")
