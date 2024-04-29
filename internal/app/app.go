@@ -87,7 +87,7 @@ func APIGetURL(res http.ResponseWriter, req *http.Request) {
 	}
 	// fmt.Println(reqJson.Url)
 	url := generateShortKey() // генерируем короткую ссылку
-	URLDb[url] = reqJSON.Url  // записываем в нашу БД
+	URLDb[url] = reqJSON.URL  // записываем в нашу БД
 
 	resultURL := flags.FlagResURL + "/" + url //  склеиваем ответ
 	resp := models.Response{

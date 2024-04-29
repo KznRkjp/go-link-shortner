@@ -7,7 +7,7 @@ package models
 // Request описывает запрос пользователя.
 // см. https://yandex.ru/dev/dialogs/alice/doc/request.html
 type Request struct {
-	Url string `json:"url"`
+	URL string `json:"url"`
 }
 
 // // SimpleUtterance описывает команду, полученную в запросе типа SimpleUtterance.
