@@ -1,6 +1,8 @@
 package app
 
 import (
+	"encoding/json"
+	"fmt"
 	"io"
 	"math/rand"
 	"net/http"
@@ -8,6 +10,7 @@ import (
 	"time"
 
 	"github.com/KznRkjp/go-link-shortner.git/internal/flags"
+	"github.com/KznRkjp/go-link-shortner.git/internal/models"
 )
 
 var URLDb = make(map[string]string)
@@ -70,9 +73,31 @@ func generateShortKey() string {
 }
 
 func ApiGetURL(res http.ResponseWriter, req *http.Request) {
+	var reqJson models.Request
 	if req.Method != http.MethodPost { // Обрабатываем POST-запрос
 		res.WriteHeader(http.StatusBadRequest)
 		return
 
 	}
+	dec := json.NewDecoder(req.Body)
+	if err := dec.Decode(&reqJson); err != nil {
+		fmt.Println("parse error")
+		res.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	// fmt.Println(reqJson.Url)
+	url := generateShortKey() // генерируем короткую ссылку
+	URLDb[url] = reqJson.Url  // записываем в нашу БД
+
+	resultURL := flags.FlagResURL + "/" + url //  склеиваем ответ
+	resp := models.Response{
+		Result: resultURL,
+	}
+	res.Header().Set("Content-Type", "application/json")
+	enc := json.NewEncoder(res)
+	if err := enc.Encode(resp); err != nil {
+		fmt.Println("Error encoding response")
+		return
+	}
+
 }
