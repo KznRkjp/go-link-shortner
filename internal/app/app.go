@@ -72,22 +72,22 @@ func generateShortKey() string {
 	return string(shortKey)
 }
 
-func ApiGetURL(res http.ResponseWriter, req *http.Request) {
-	var reqJson models.Request
+func APIGetURL(res http.ResponseWriter, req *http.Request) {
+	var reqJSON models.Request
 	if req.Method != http.MethodPost { // Обрабатываем POST-запрос
 		res.WriteHeader(http.StatusBadRequest)
 		return
 
 	}
 	dec := json.NewDecoder(req.Body)
-	if err := dec.Decode(&reqJson); err != nil {
+	if err := dec.Decode(&reqJSON); err != nil {
 		fmt.Println("parse error")
 		res.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	// fmt.Println(reqJson.Url)
 	url := generateShortKey() // генерируем короткую ссылку
-	URLDb[url] = reqJson.Url  // записываем в нашу БД
+	URLDb[url] = reqJSON.Url  // записываем в нашу БД
 
 	resultURL := flags.FlagResURL + "/" + url //  склеиваем ответ
 	resp := models.Response{
