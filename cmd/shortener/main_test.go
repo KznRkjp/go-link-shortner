@@ -135,3 +135,61 @@ func Test_returnURL(t *testing.T) {
 		})
 	}
 }
+
+func TestAPIGetURL(t *testing.T) {
+	type args struct {
+		code        int
+		data        string
+		contentType string
+	}
+	tests := []struct {
+		name string
+		args args
+	}{
+		{
+			name: "Test URL 1",
+			args: args{
+				code:        201,
+				data:        `{"url":"http://mail.ru"}`,
+				contentType: "application/json",
+			},
+		},
+		{
+			name: "Test URL 2",
+			args: args{
+				code:        201,
+				data:        `{"url":"https://google.com"}`,
+				contentType: "application/json",
+			},
+		},
+		{
+			name: "Test URL 3",
+			args: args{
+				code:        201,
+				data:        `{"url":"https://www.google.com/search?q=golang+tests+best+practices"}`,
+				contentType: "application/json",
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			// req := models.Request{
+			// 	URL: test.args.data,
+			// }
+			// req1, _ := json.Marshal(req)
+
+			// request := httptest.NewRequest(http.MethodPost, "/api/shorten", strings.NewReader(string(req1)))
+			request := httptest.NewRequest(http.MethodPost, "/api/shorten", strings.NewReader(test.args.data))
+
+			w := httptest.NewRecorder()
+			app.APIGetURL(w, request)
+
+			res := w.Result()
+			// проверяем код ответа
+			assert.Equal(t, test.args.code, res.StatusCode)
+			// получаем и проверяем тело запроса
+			defer res.Body.Close()
+		})
+	}
+}

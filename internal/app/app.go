@@ -79,13 +79,14 @@ func APIGetURL(res http.ResponseWriter, req *http.Request) {
 		return
 
 	}
+	// fmt.Println(req.Body)
 	dec := json.NewDecoder(req.Body)
 	if err := dec.Decode(&reqJSON); err != nil {
 		fmt.Println("parse error")
 		res.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	// fmt.Println(reqJson.Url)
+	// fmt.Println(reqJSON.URL)
 	url := generateShortKey() // генерируем короткую ссылку
 	URLDb[url] = reqJSON.URL  // записываем в нашу БД
 
