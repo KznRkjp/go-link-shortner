@@ -39,7 +39,6 @@ func GetURL(res http.ResponseWriter, req *http.Request) {
 }
 
 func ReturnURL(res http.ResponseWriter, req *http.Request) {
-	// fmt.Println("ReturnURL")
 	if req.Method != http.MethodGet { // Обрабатываем POST-запрос
 		res.WriteHeader(http.StatusBadRequest)
 		return
