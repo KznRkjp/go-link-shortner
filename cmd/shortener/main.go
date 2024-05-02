@@ -1,7 +1,9 @@
 package main
 
 import (
+	"log"
 	"net/http"
+	"os"
 
 	"github.com/KznRkjp/go-link-shortner.git/internal/app"
 	"github.com/KznRkjp/go-link-shortner.git/internal/flags"
@@ -13,6 +15,11 @@ func main() {
 
 	flags.ParseFlags()
 	if len(flags.FlagDBFilePath) > 0 {
+		_, err := os.OpenFile(flags.FlagDBFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		app.LoadDB(flags.FlagDBFilePath)
 	}
 	dd := router.Main()
