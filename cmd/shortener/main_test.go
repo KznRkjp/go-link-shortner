@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/KznRkjp/go-link-shortner.git/internal/app"
+	"github.com/KznRkjp/go-link-shortner.git/internal/filesio"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -118,7 +119,8 @@ func Test_returnURL(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			//Populate DB
-			app.URLDb["9JSpJWH612"] = "https://test-pass-ok.com"
+			// app.URLDb["9JSpJWH612"] = "https://test-pass-ok.com"
+			app.URLDb["9JSpJWH612"] = filesio.URLRecord{ID: 1, ShortURL: "https://test-pass-ok.com", OriginalURL: "9JSpJWH612"}
 
 			request := httptest.NewRequest(http.MethodGet, test.args.urlPart, nil)
 			// создаём новый Recorder
