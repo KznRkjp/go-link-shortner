@@ -4,19 +4,50 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"math/rand"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
+	"github.com/KznRkjp/go-link-shortner.git/internal/filesio"
 	"github.com/KznRkjp/go-link-shortner.git/internal/flags"
 	"github.com/KznRkjp/go-link-shortner.git/internal/models"
 )
 
-var URLDb = make(map[string]string)
+func check(e error) {
+	if e != nil {
+		panic(e)
+	}
+}
+
+var URLDb = make(map[string]filesio.URLRecord)
+
+// Load data from file containg json records to our im memory DB
+func LoadDB(fileName string) {
+	dat, err := os.ReadFile(fileName)
+	check(err)
+	newDat := strings.Split(string(dat), "\n")
+
+	Consumer, err := filesio.NewConsumer(fileName)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer Consumer.Close()
+
+	for i := 0; i < len(newDat)-1; i++ {
+		readEvent, err := Consumer.ReadEvent()
+		if err != nil {
+			log.Fatal(err)
+		}
+		URLDb[readEvent.ShortURL] = *readEvent
+	}
+
+}
 
 func GetURL(res http.ResponseWriter, req *http.Request) {
-	// fmt.Println("GetURL")
+
 	if req.Method != http.MethodPost { // Обрабатываем POST-запрос
 		res.WriteHeader(http.StatusBadRequest)
 		return
@@ -29,13 +60,25 @@ func GetURL(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 	url := generateShortKey() // генерируем короткую ссылку
-	URLDb[url] = string(body) // записываем в нашу БД
+	URLDb[url] = filesio.URLRecord{uint(len(URLDb)), url, string(body)}
+
+	//record to file if path is not empty
+	if len(flags.FlagDBFilePath) > 1 {
+		Producer, err := filesio.NewProducer(flags.FlagDBFilePath)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer Producer.Close()
+		if err := Producer.WriteEvent(&filesio.URLRecord{uint(len(URLDb)), url, string(body)}); err != nil {
+			log.Fatal(err)
+		}
+	}
 
 	resultURL := flags.FlagResURL + "/" + url //  склеиваем ответ
 	res.Header().Set("content-type", "text/plain")
 	res.WriteHeader(http.StatusCreated)
 	res.Write([]byte(resultURL))
-	// return
+
 }
 
 func ReturnURL(res http.ResponseWriter, req *http.Request) {
@@ -46,13 +89,14 @@ func ReturnURL(res http.ResponseWriter, req *http.Request) {
 	shortURL := strings.Trim(req.RequestURI, "/")
 	// var result bool
 	resURL, ok := URLDb[shortURL]
+	fmt.Println(resURL.OriginalURL)
 	// If the key exists
 	if !ok {
 		res.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	res.Header().Set("Location", resURL)
+	res.Header().Set("Location", resURL.OriginalURL) //  !!!!
 	res.WriteHeader(http.StatusTemporaryRedirect)
 	// return
 
@@ -87,7 +131,8 @@ func APIGetURL(res http.ResponseWriter, req *http.Request) {
 	}
 	// fmt.Println(reqJSON.URL)
 	url := generateShortKey() // генерируем короткую ссылку
-	URLDb[url] = reqJSON.URL  // записываем в нашу БД
+	// URLDb[url] = reqJSON.URL  // записываем в нашу БД
+	URLDb[url] = filesio.URLRecord{uint(len(URLDb)), url, reqJSON.URL}
 
 	resultURL := flags.FlagResURL + "/" + url //  склеиваем ответ
 	resp := models.Response{
@@ -99,6 +144,17 @@ func APIGetURL(res http.ResponseWriter, req *http.Request) {
 	if err := enc.Encode(resp); err != nil {
 		res.WriteHeader(http.StatusInternalServerError)
 		return
+	}
+	//record to file if path is not empty
+	if len(flags.FlagDBFilePath) > 1 {
+		Producer, err := filesio.NewProducer(flags.FlagDBFilePath)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer Producer.Close()
+		if err := Producer.WriteEvent(&filesio.URLRecord{uint(len(URLDb)), url, reqJSON.URL}); err != nil {
+			log.Fatal(err)
+		}
 	}
 
 }
