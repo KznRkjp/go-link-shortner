@@ -60,7 +60,7 @@ func GetURL(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 	url := generateShortKey() // генерируем короткую ссылку
-	URLDb[url] = filesio.URLRecord{uint(len(URLDb)), url, string(body)}
+	URLDb[url] = filesio.URLRecord{ID: uint(len(URLDb)), ShortURL: url, OriginalURL: string(body)}
 
 	//record to file if path is not empty
 	if len(flags.FlagDBFilePath) > 1 {
@@ -69,7 +69,7 @@ func GetURL(res http.ResponseWriter, req *http.Request) {
 			log.Fatal(err)
 		}
 		defer Producer.Close()
-		if err := Producer.WriteEvent(&filesio.URLRecord{uint(len(URLDb)), url, string(body)}); err != nil {
+		if err := Producer.WriteEvent(&filesio.URLRecord{ID: uint(len(URLDb)), ShortURL: url, OriginalURL: string(body)}); err != nil {
 			log.Fatal(err)
 		}
 	}
@@ -132,7 +132,7 @@ func APIGetURL(res http.ResponseWriter, req *http.Request) {
 	// fmt.Println(reqJSON.URL)
 	url := generateShortKey() // генерируем короткую ссылку
 	// URLDb[url] = reqJSON.URL  // записываем в нашу БД
-	URLDb[url] = filesio.URLRecord{uint(len(URLDb)), url, reqJSON.URL}
+	URLDb[url] = filesio.URLRecord{ID: uint(len(URLDb)), ShortURL: url, OriginalURL: reqJSON.URL}
 
 	resultURL := flags.FlagResURL + "/" + url //  склеиваем ответ
 	resp := models.Response{
@@ -152,7 +152,7 @@ func APIGetURL(res http.ResponseWriter, req *http.Request) {
 			log.Fatal(err)
 		}
 		defer Producer.Close()
-		if err := Producer.WriteEvent(&filesio.URLRecord{uint(len(URLDb)), url, reqJSON.URL}); err != nil {
+		if err := Producer.WriteEvent(&filesio.URLRecord{ID: uint(len(URLDb)), ShortURL: url, OriginalURL: reqJSON.URL}); err != nil {
 			log.Fatal(err)
 		}
 	}
