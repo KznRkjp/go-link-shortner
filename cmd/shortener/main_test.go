@@ -120,7 +120,7 @@ func Test_returnURL(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			//Populate DB
 			// app.URLDb["9JSpJWH612"] = "https://test-pass-ok.com"
-			app.URLDb["9JSpJWH612"] = filesio.URLRecord{ID: 1, ShortURL: "https://test-pass-ok.com", OriginalURL: "9JSpJWH612"}
+			app.URLDb["9JSpJWH612"] = filesio.URLRecord{ID: 1, ShortURL: "9JSpJWH612", OriginalURL: "https://test-pass-ok.com"}
 
 			request := httptest.NewRequest(http.MethodGet, test.args.urlPart, nil)
 			// создаём новый Recorder
