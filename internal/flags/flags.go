@@ -19,7 +19,7 @@ func ParseFlags() {
 	// регистрируем переменную resURL
 	flag.StringVar(&FlagResURL, "b", "http://localhost:8080", "result URL")
 	// регистрируем переменную DBFilePath
-	flag.StringVar(&FlagDBFilePath, "f", "../../data/data.json", "Full path to DB file")
+	flag.StringVar(&FlagDBFilePath, "f", "/tmp/short-url-db.json", "Full path to DB file")
 
 	// парсим переданные серверу аргументы в зарегистрированные переменные
 	flag.Parse()
