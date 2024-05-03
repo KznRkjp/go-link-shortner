@@ -31,6 +31,6 @@ func ParseFlags() {
 		FlagResURL = envResURL
 	}
 	if envDBFilePath := os.Getenv("FILE_STORAGE_PATH"); envDBFilePath != "" {
-		FlagResURL = envDBFilePath
+		FlagDBFilePath = envDBFilePath
 	}
 }
