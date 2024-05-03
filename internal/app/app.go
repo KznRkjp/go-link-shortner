@@ -25,34 +25,27 @@ func check(e error) {
 
 var URLDb = make(map[string]filesio.URLRecord)
 
-// Load data from file containg json records to our im memory DB
-
+// Useless at this point.
 func chekIfExists(fileName string) bool {
 	if _, err := os.Stat(fileName); err == nil {
-		// path/to/whatever exists
-		fmt.Println(fileName)
-		fmt.Println("file exists")
+		fmt.Println("data file exists")
 
 	} else if errors.Is(err, os.ErrNotExist) {
-		// path/to/whatever does *not* exist
 		fmt.Println("file does not exist")
 
 	} else {
 		fmt.Println("Dragons be there")
-		// Schrodinger: file may or may not exist. See err for details.
-
-		// Therefore, do *NOT* use !os.IsNotExist(err) to test for file existence
-
 	}
 	return true
 }
 
+// Load data from file containg json records to our im memory DB
 func LoadDB(fileName string) {
 	chekIfExists(fileName)
 	dat, err := os.ReadFile(fileName)
 	check(err)
 	newDat := strings.Split(string(dat), "\n")
-	// fmt.Println(dat)
+
 	Consumer, err := filesio.NewConsumer(fileName)
 	if err != nil {
 		log.Fatal(err)
@@ -66,7 +59,6 @@ func LoadDB(fileName string) {
 		}
 		URLDb[readEvent.ShortURL] = *readEvent
 	}
-	fmt.Println("Load DB OK")
 }
 
 func GetURL(res http.ResponseWriter, req *http.Request) {
