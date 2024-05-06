@@ -46,14 +46,14 @@ func LoadDB(fileName string) {
 	check(err)
 	newDat := strings.Split(string(dat), "\n")
 
-	Consumer, err := filesio.NewConsumer(fileName)
+	consumer, err := filesio.NewConsumer(fileName)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer Consumer.Close()
+	defer consumer.Close()
 
 	for i := 0; i < len(newDat)-1; i++ {
-		readEvent, err := Consumer.ReadEvent()
+		readEvent, err := consumer.ReadEvent()
 		if err != nil {
 			log.Panic(err)
 		}
@@ -79,12 +79,12 @@ func GetURL(res http.ResponseWriter, req *http.Request) {
 
 	//record to file if path is not empty
 	if len(flags.FlagDBFilePath) > 1 {
-		Producer, err := filesio.NewProducer(flags.FlagDBFilePath)
+		producer, err := filesio.NewProducer(flags.FlagDBFilePath)
 		if err != nil {
 			log.Fatal(err)
 		}
-		defer Producer.Close()
-		if err := Producer.WriteEvent(&filesio.URLRecord{ID: uint(len(URLDb)), ShortURL: url, OriginalURL: string(body)}); err != nil {
+		defer producer.Close()
+		if err := producer.WriteEvent(&filesio.URLRecord{ID: uint(len(URLDb)), ShortURL: url, OriginalURL: string(body)}); err != nil {
 			log.Fatal(err)
 		}
 	}
