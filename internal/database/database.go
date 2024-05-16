@@ -39,7 +39,7 @@ func CreateTable() {
 		panic(err)
 	}
 	defer conn.Close()
-	rows, tableCheck := conn.Query("select * from  url;")
+	_, tableCheck := conn.Query("select * from  url;")
 	// _ = rows.Err()
 	if tableCheck == nil {
 		fmt.Println("table is there")
