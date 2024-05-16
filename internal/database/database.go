@@ -52,14 +52,14 @@ func CreateTable() {
 
 }
 
-func WriteToDB(url string, originalUrl string) {
+func WriteToDB(url string, originalURL string) {
 	conn, err := sql.Open("pgx", flags.FlagDBString)
 	if err != nil {
 		panic(err)
 	}
 	defer conn.Close()
 	insertDynStmt := `insert into "url"("shorturl", "originalurl") values($1, $2)`
-	_, err = conn.Exec(insertDynStmt, url, originalUrl)
+	_, err = conn.Exec(insertDynStmt, url, originalURL)
 	if err != nil {
 		panic(err)
 	}
