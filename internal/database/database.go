@@ -32,13 +32,15 @@ func Ping(res http.ResponseWriter, req *http.Request) {
 }
 
 func CreateTable() {
+	fmt.Println("DB String", flags.FlagDBString)
 	conn, err := sql.Open("pgx", flags.FlagDBString)
 	if err != nil {
+		fmt.Println("DB error")
 		panic(err)
 	}
 	defer conn.Close()
 	rows, tableCheck := conn.Query("select * from  url;")
-	_ = rows.Err()
+	// _ = rows.Err()
 	if tableCheck == nil {
 		fmt.Println("table is there")
 	} else {
