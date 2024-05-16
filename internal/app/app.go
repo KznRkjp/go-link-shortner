@@ -77,7 +77,6 @@ func GetURL(res http.ResponseWriter, req *http.Request) {
 	}
 	url := generateShortKey() // генерируем короткую ссылку
 
-	flags.ParseFlags()
 	if flags.FlagDBString != "" {
 		database.WriteToDB(url, string(body))
 
