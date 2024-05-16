@@ -25,7 +25,8 @@ func ParseFlags() {
 	// регистрируем переменную FlagDBString - для подлкючения к базе данных
 	ps := fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=disable",
 		`localhost`, `url`, `dwwq34zf!3`, `url`)
-	flag.StringVar(&FlagDBString, "d", ps, "String for DB connection")
+	fmt.Println(ps)
+	flag.StringVar(&FlagDBString, "d", "", "String for DB connection")
 	// парсим переданные серверу аргументы в зарегистрированные переменные
 	flag.Parse()
 

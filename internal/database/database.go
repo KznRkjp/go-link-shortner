@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -27,4 +28,26 @@ func Ping(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 	res.WriteHeader(http.StatusOK)
+}
+
+func CreateTable() {
+	conn, err := sql.Open("pgx", flags.FlagDBString)
+	if err != nil {
+		panic(err)
+	}
+	defer conn.Close()
+	_, table_check := conn.Query("select * from  url;")
+
+	if table_check == nil {
+		fmt.Println("table is there")
+	} else {
+		fmt.Println("table not there")
+		// dynamic
+		insertDynStmt := "CREATE TABLE url (id SERIAL PRIMARY KEY, shorturl TEXT, originalurl TEXT);"
+		_, err = conn.Exec(insertDynStmt)
+		if err != nil {
+			panic(err)
+		}
+	}
+
 }
