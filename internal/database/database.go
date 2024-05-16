@@ -15,7 +15,7 @@ import (
 )
 
 func Ping(res http.ResponseWriter, req *http.Request) {
-	flags.ParseFlags()
+	// flags.ParseFlags()
 	conn, err := sql.Open("pgx", flags.FlagDBString)
 	if err != nil {
 		panic(err)
