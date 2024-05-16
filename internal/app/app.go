@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/KznRkjp/go-link-shortner.git/internal/database"
 	"github.com/KznRkjp/go-link-shortner.git/internal/filesio"
 	"github.com/KznRkjp/go-link-shortner.git/internal/flags"
 	"github.com/KznRkjp/go-link-shortner.git/internal/models"
@@ -75,10 +76,16 @@ func GetURL(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 	url := generateShortKey() // генерируем короткую ссылку
-	URLDb[url] = filesio.URLRecord{ID: uint(len(URLDb)), ShortURL: url, OriginalURL: string(body)}
 
-	//record to file if path is not empty
-	if len(flags.FlagDBFilePath) > 1 {
+	flags.ParseFlags()
+	if flags.FlagDBString != "" {
+		database.WriteToDB(url, string(body))
+
+	} else if len(flags.FlagDBFilePath) > 1 {
+
+		URLDb[url] = filesio.URLRecord{ID: uint(len(URLDb)), ShortURL: url, OriginalURL: string(body)}
+		//record to file if path is not empty
+
 		producer, err := filesio.NewProducer(flags.FlagDBFilePath)
 		if err != nil {
 			log.Fatal(err)
@@ -87,6 +94,7 @@ func GetURL(res http.ResponseWriter, req *http.Request) {
 		if err := producer.WriteEvent(&filesio.URLRecord{ID: uint(len(URLDb)), ShortURL: url, OriginalURL: string(body)}); err != nil {
 			log.Fatal(err)
 		}
+
 	}
 
 	resultURL := flags.FlagResURL + "/" + url //  склеиваем ответ

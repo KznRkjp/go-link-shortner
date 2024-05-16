@@ -36,9 +36,9 @@ func CreateTable() {
 		panic(err)
 	}
 	defer conn.Close()
-	_, table_check := conn.Query("select * from  url;")
+	_, tableCheck := conn.Query("select * from  url;")
 
-	if table_check == nil {
+	if tableCheck == nil {
 		fmt.Println("table is there")
 	} else {
 		fmt.Println("table not there")
@@ -50,4 +50,17 @@ func CreateTable() {
 		}
 	}
 
+}
+
+func WriteToDB(url string, originalUrl string) {
+	conn, err := sql.Open("pgx", flags.FlagDBString)
+	if err != nil {
+		panic(err)
+	}
+	defer conn.Close()
+	insertDynStmt := `insert into "url"("shorturl", "originalurl") values($1, $2)`
+	_, err = conn.Exec(insertDynStmt, url, originalUrl)
+	if err != nil {
+		panic(err)
+	}
 }
