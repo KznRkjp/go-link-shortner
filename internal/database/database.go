@@ -39,19 +39,19 @@ func CreateTable() {
 		panic(err)
 	}
 	defer conn.Close()
-	_, tableCheck := conn.Query("select * from  url;")
-	// _ = rows.Err()
-	if tableCheck == nil {
-		fmt.Println("table is there")
-	} else {
-		fmt.Println("table not there")
-		// dynamic
-		insertDynStmt := "CREATE TABLE url (id SERIAL PRIMARY KEY, shorturl TEXT, originalurl TEXT);"
-		_, err = conn.Exec(insertDynStmt)
-		if err != nil {
-			panic(err)
-		}
+	// _, tableCheck := conn.Query("select * from  url;")
+	// _ = _.Err()
+	// if tableCheck == nil {
+	// 	fmt.Println("table is there")
+	// } else {
+	// fmt.Println("table not there")
+	// dynamic
+	insertDynStmt := "CREATE TABLE url (id SERIAL PRIMARY KEY, shorturl TEXT, originalurl TEXT);"
+	_, err = conn.Exec(insertDynStmt)
+	if err != nil {
+		fmt.Println("Database exists")
 	}
+	// }
 
 }
 
