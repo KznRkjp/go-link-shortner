@@ -71,7 +71,7 @@ func saveData(body []byte) string {
 func saveDataAPI(url string, shortURL string) string {
 
 	if flags.FlagDBString != "" {
-		database.WriteToDB(shortURL, url, "nil")
+		database.WriteToDB(url, shortURL, "nil")
 
 	} else if len(flags.FlagDBFilePath) > 1 {
 		// URLDb[url] = reqJSON.URL  // записываем в нашу БД
@@ -191,21 +191,33 @@ func APIGetURL(res http.ResponseWriter, req *http.Request) {
 		res.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	shortURL, err := database.CheckForDuplicates(reqJSON.URL)
+	if err != nil {
+		url := urlgen.GenerateShortKey() // генерируем короткую ссылку
+		resultURL := saveDataAPI(url, reqJSON.URL)
+		resp := models.Response{
+			Result: resultURL,
+		}
+		res.Header().Set("Content-Type", "application/json")
+		res.WriteHeader(http.StatusCreated)
+		enc := json.NewEncoder(res)
+		if err := enc.Encode(resp); err != nil {
+			res.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	} else {
 
-	url := urlgen.GenerateShortKey() // генерируем короткую ссылку
-	resultURL := saveDataAPI(url, reqJSON.URL)
-
-	resp := models.Response{
-		Result: resultURL,
+		resp := models.Response{
+			Result: flags.FlagResURL + "/" + shortURL,
+		}
+		res.Header().Set("Content-Type", "application/json")
+		res.WriteHeader(http.StatusConflict)
+		enc := json.NewEncoder(res)
+		if err := enc.Encode(resp); err != nil {
+			res.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 	}
-	res.Header().Set("Content-Type", "application/json")
-	res.WriteHeader(http.StatusCreated)
-	enc := json.NewEncoder(res)
-	if err := enc.Encode(resp); err != nil {
-		res.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
 }
 
 // [{"correlation_id":"8edc229b-b33e-42ad-b5ad-41be395532c6","original_url":"http://xwn34krdyhmz6r.com/tomwj"},{"correlation_id":"9de2b71f-1279-49c9-8081-bbcbac126334","original_url":"http://xae08jvk2j.biz/phqabbnxpiy/jlvxobs77nt"}]

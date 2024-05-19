@@ -117,3 +117,31 @@ func GetFromDB(shortURL string) (string, error) {
 
 	return originalurl, err
 }
+
+func CheckForDuplicates(URL string) (string, error) {
+	conn, err := sql.Open("pgx", flags.FlagDBString)
+	if err != nil {
+		return "", err
+	}
+
+	defer conn.Close()
+	insertDynStmt := `SELECT shorturl FROM url where originalurl = '` + URL + `'`
+
+	row := conn.QueryRowContext(context.Background(),
+		insertDynStmt)
+	fmt.Println("Check for duplicates")
+	// if err != nil {
+	// 	return "",err
+	// }
+	var shorturl string
+
+	err = row.Scan(&shorturl)
+
+	if err != nil {
+		fmt.Println("Not found")
+		return "", err
+	}
+	fmt.Println(shorturl)
+	return shorturl, err
+
+}
