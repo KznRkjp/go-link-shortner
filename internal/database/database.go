@@ -9,8 +9,10 @@ import (
 
 	// "fmt"
 
+	// "github.com/KznRkjp/go-link-shortner.git/internal/app"
 	"github.com/KznRkjp/go-link-shortner.git/internal/flags"
-
+	"github.com/KznRkjp/go-link-shortner.git/internal/models"
+	"github.com/KznRkjp/go-link-shortner.git/internal/urlgen"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
@@ -63,6 +65,35 @@ func WriteToDB(url string, originalURL string, correlationID string) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func WriteToDBBatch(listURL []models.BatchRequest) error {
+	conn, err := sql.Open("pgx", flags.FlagDBString)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+	ctx := context.Background()
+	tx, err := conn.Begin()
+	if err != nil {
+		return err
+	}
+	for _, v := range listURL {
+		// все изменения записываются в транзакцию
+		shortURL := urlgen.GenerateShortKey()
+		_, err := tx.ExecContext(ctx,
+			"INSERT INTO url (shorturl, originalurl, correlationid)"+
+				" VALUES($1,$2,$3)", shortURL, v.URL, v.CorrelationID)
+		if err != nil {
+			fmt.Println("error in here")
+			// если ошибка, то откатываем изменения
+			tx.Rollback()
+			return err
+		}
+	}
+	// завершаем транзакцию
+	return tx.Commit()
+
 }
 
 func GetFromDB(shortURL string) (string, error) {

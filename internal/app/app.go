@@ -6,16 +6,19 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"math/rand"
+
+	// "math/rand"
 	"net/http"
 	"os"
 	"strings"
-	"time"
+
+	// "time"
 
 	"github.com/KznRkjp/go-link-shortner.git/internal/database"
 	"github.com/KznRkjp/go-link-shortner.git/internal/filesio"
 	"github.com/KznRkjp/go-link-shortner.git/internal/flags"
 	"github.com/KznRkjp/go-link-shortner.git/internal/models"
+	"github.com/KznRkjp/go-link-shortner.git/internal/urlgen"
 )
 
 func check(e error) {
@@ -42,7 +45,7 @@ func chekIfExists(fileName string) bool {
 
 func saveData(body []byte) string {
 
-	url := generateShortKey()
+	url := urlgen.GenerateShortKey()
 
 	if flags.FlagDBString != "" {
 		database.WriteToDB(url, string(body), "nil")
@@ -125,12 +128,10 @@ func ReturnURL(res http.ResponseWriter, req *http.Request) {
 		res.Header().Set("Location", resURL)
 
 	} else if len(flags.FlagDBFilePath) > 1 {
-		// var result bool
 
 		resURLStruct, ok := URLDb[shortURL]
 		resURL := resURLStruct.OriginalURL
-		// fmt.Println(resURL.OriginalURL)
-		// If the key exists
+
 		if !ok {
 			res.WriteHeader(http.StatusBadRequest)
 			return
@@ -147,24 +148,22 @@ func ReturnURL(res http.ResponseWriter, req *http.Request) {
 
 	}
 
-	//  !!!!
 	res.WriteHeader(http.StatusTemporaryRedirect)
-	// return
 
 }
 
-func generateShortKey() string {
-	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	const keyLength = 8
+// func GenerateShortKey() string {
+// 	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+// 	const keyLength = 8
 
-	source := rand.NewSource(time.Now().UnixNano())
-	rng := rand.New(source)
-	shortKey := make([]byte, keyLength)
-	for i := range shortKey {
-		shortKey[i] = charset[rng.Intn(len(charset))]
-	}
-	return string(shortKey)
-}
+// 	source := rand.NewSource(time.Now().UnixNano())
+// 	rng := rand.New(source)
+// 	shortKey := make([]byte, keyLength)
+// 	for i := range shortKey {
+// 		shortKey[i] = charset[rng.Intn(len(charset))]
+// 	}
+// 	return string(shortKey)
+// }
 
 func APIGetURL(res http.ResponseWriter, req *http.Request) {
 	var reqJSON models.Request
@@ -181,7 +180,7 @@ func APIGetURL(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 	// fmt.Println(reqJSON.URL)
-	url := generateShortKey() // генерируем короткую ссылку
+	url := urlgen.GenerateShortKey() // генерируем короткую ссылку
 	// URLDb[url] = reqJSON.URL  // записываем в нашу БД
 	URLDb[url] = filesio.URLRecord{ID: uint(len(URLDb)), ShortURL: url, OriginalURL: reqJSON.URL}
 
@@ -226,8 +225,16 @@ func APIBatchGetURL(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 	fmt.Println(sliceReqJSON)
-	for i, s := range sliceReqJSON {
-		fmt.Println(i, s)
+	err := database.WriteToDBBatch(sliceReqJSON)
+	if err != nil {
+		fmt.Println("error")
+		res.WriteHeader(http.StatusInternalServerError)
+		return
 	}
+	// for i, s := range sliceReqJSON {
+	// 	fmt.Println(i, s)
+	// }
+	res.Header().Set("Content-Type", "application/json")
+	res.WriteHeader(http.StatusCreated)
 
 }
