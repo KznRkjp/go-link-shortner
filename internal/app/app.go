@@ -74,6 +74,8 @@ func saveDataApi(url string, shortURL string) string {
 		database.WriteToDB(shortURL, url, "nil")
 
 	} else if len(flags.FlagDBFilePath) > 1 {
+		// URLDb[url] = reqJSON.URL  // записываем в нашу БД
+		// URLDb[url] = filesio.URLRecord{ID: uint(len(URLDb)), ShortURL: url, OriginalURL: reqJSON.URL}
 
 		URLDb[shortURL] = filesio.URLRecord{ID: uint(len(URLDb)), ShortURL: shortURL, OriginalURL: url}
 		//record to file if path is not empty
@@ -83,7 +85,7 @@ func saveDataApi(url string, shortURL string) string {
 			log.Fatal(err)
 		}
 		defer producer.Close()
-		if err := producer.WriteEvent(&filesio.URLRecord{ID: uint(len(URLDb)), ShortURL: url, OriginalURL: string(body)}); err != nil {
+		if err := producer.WriteEvent(&filesio.URLRecord{ID: uint(len(URLDb)), ShortURL: shortURL, OriginalURL: url}); err != nil {
 			log.Fatal(err)
 		}
 	}
@@ -182,14 +184,13 @@ func APIGetURL(res http.ResponseWriter, req *http.Request) {
 		return
 
 	}
-	// fmt.Println(req.Body)
 	dec := json.NewDecoder(req.Body)
 	if err := dec.Decode(&reqJSON); err != nil {
 		fmt.Println("parse error")
 		res.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	// fmt.Println(reqJSON.URL)
+
 	url := urlgen.GenerateShortKey() // генерируем короткую ссылку
 	// URLDb[url] = reqJSON.URL  // записываем в нашу БД
 	// URLDb[url] = filesio.URLRecord{ID: uint(len(URLDb)), ShortURL: url, OriginalURL: reqJSON.URL}
