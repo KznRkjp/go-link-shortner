@@ -130,10 +130,18 @@ func GetURL(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	resultURL := saveData(body)
-	res.Header().Set("content-type", "text/plain")
-	res.WriteHeader(http.StatusCreated)
-	res.Write([]byte(resultURL))
+	shortURL, err := database.CheckForDuplicates(string(body), URLDb)
+	if err != nil {
+		resultURL := saveData(body)
+		res.Header().Set("content-type", "text/plain")
+		res.WriteHeader(http.StatusCreated)
+		res.Write([]byte(resultURL))
+	} else {
+		res.Header().Set("content-type", "text/plain")
+		res.WriteHeader(http.StatusConflict)
+		res.Write([]byte(flags.FlagResURL + "/" + shortURL))
+
+	}
 
 }
 
