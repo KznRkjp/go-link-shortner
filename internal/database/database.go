@@ -99,7 +99,7 @@ func GetFromDB(shortURL string) (string, error) {
 	}
 
 	defer conn.Close()
-	insertDynStmt := `SELECT originalurl, correlationid, shorturl FROM url where shorturl =` + shortURL
+	insertDynStmt := `SELECT originalurl FROM url where shorturl = '` + shortURL + `'`
 
 	row := conn.QueryRowContext(context.Background(),
 		insertDynStmt)
@@ -107,11 +107,13 @@ func GetFromDB(shortURL string) (string, error) {
 	// if err != nil {
 	// 	return "",err
 	// }
-	var originalURL string
-	err = row.Scan(&originalURL)
+	var originalurl string
+
+	err = row.Scan(&originalurl)
+
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(originalURL)
-	return originalURL, err
+
+	return originalurl, err
 }

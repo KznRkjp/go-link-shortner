@@ -68,7 +68,7 @@ func saveData(body []byte) string {
 	return resultURL
 }
 
-func saveDataApi(url string, shortURL string) string {
+func saveDataAPI(url string, shortURL string) string {
 
 	if flags.FlagDBString != "" {
 		database.WriteToDB(shortURL, url, "nil")
@@ -194,7 +194,7 @@ func APIGetURL(res http.ResponseWriter, req *http.Request) {
 	url := urlgen.GenerateShortKey() // генерируем короткую ссылку
 	// URLDb[url] = reqJSON.URL  // записываем в нашу БД
 	// URLDb[url] = filesio.URLRecord{ID: uint(len(URLDb)), ShortURL: url, OriginalURL: reqJSON.URL}
-	resultURL := saveDataApi(url, reqJSON.URL)
+	resultURL := saveDataAPI(url, reqJSON.URL)
 	// resultURL := flags.FlagResURL + "/" + url //  склеиваем ответ
 	resp := models.Response{
 		Result: resultURL,
