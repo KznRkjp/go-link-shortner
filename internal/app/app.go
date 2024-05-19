@@ -225,7 +225,7 @@ func APIBatchGetURL(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	for i, _ := range sliceReqJSON {
+	for i := range sliceReqJSON {
 		sliceReqJSON[i].ShortURL = urlgen.GenerateShortKey()
 	}
 	err := database.WriteToDBBatch(sliceReqJSON)
@@ -241,7 +241,7 @@ func APIBatchGetURL(res http.ResponseWriter, req *http.Request) {
 	res.WriteHeader(http.StatusCreated)
 	enc := json.NewEncoder(res)
 	var resp []models.BatchResponse
-	for i, _ := range sliceReqJSON {
+	for i := range sliceReqJSON {
 		var newResponseRecord models.BatchResponse
 		newResponseRecord.CorrelationID = sliceReqJSON[i].CorrelationID
 		newResponseRecord.URL = sliceReqJSON[i].ShortURL
