@@ -191,7 +191,7 @@ func APIGetURL(res http.ResponseWriter, req *http.Request) {
 		res.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	shortURL, err := database.CheckForDuplicates(reqJSON.URL)
+	shortURL, err := database.CheckForDuplicates(reqJSON.URL, URLDb)
 	if err != nil {
 		url := urlgen.GenerateShortKey() // генерируем короткую ссылку
 		resultURL := saveDataAPI(url, reqJSON.URL)

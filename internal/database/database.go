@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/KznRkjp/go-link-shortner.git/internal/filesio"
 	"github.com/KznRkjp/go-link-shortner.git/internal/flags"
 	"github.com/KznRkjp/go-link-shortner.git/internal/models"
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -118,30 +119,37 @@ func GetFromDB(shortURL string) (string, error) {
 	return originalurl, err
 }
 
-func CheckForDuplicates(URL string) (string, error) {
-	conn, err := sql.Open("pgx", flags.FlagDBString)
-	if err != nil {
-		return "", err
+func CheckForDuplicates(URL string, URLDb map[string]filesio.URLRecord) (string, error) {
+	if flags.FlagDBString != "" {
+
+		conn, err := sql.Open("pgx", flags.FlagDBString)
+		if err != nil {
+			return "", err
+		}
+
+		defer conn.Close()
+		insertDynStmt := `SELECT shorturl FROM url where originalurl = '` + URL + `'`
+
+		row := conn.QueryRowContext(context.Background(),
+			insertDynStmt)
+		fmt.Println("Check for duplicates")
+
+		var shorturl string
+
+		err = row.Scan(&shorturl)
+
+		if err != nil {
+			return "", err
+		}
+		return shorturl, err
+
+	} else if len(flags.FlagDBFilePath) > 1 {
+		for _, value := range URLDb {
+			if value.OriginalURL == URL {
+				return value.ShortURL, nil
+			}
+		}
+		return "", fmt.Errorf("duplicate url (id: %s)", URL)
 	}
-
-	defer conn.Close()
-	insertDynStmt := `SELECT shorturl FROM url where originalurl = '` + URL + `'`
-
-	row := conn.QueryRowContext(context.Background(),
-		insertDynStmt)
-	fmt.Println("Check for duplicates")
-	// if err != nil {
-	// 	return "",err
-	// }
-	var shorturl string
-
-	err = row.Scan(&shorturl)
-
-	if err != nil {
-		fmt.Println("Not found")
-		return "", err
-	}
-	fmt.Println(shorturl)
-	return shorturl, err
-
+	return "", nil
 }
