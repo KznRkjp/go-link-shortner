@@ -85,7 +85,7 @@ func saveDataAPI(url string, shortURL string) string {
 			log.Fatal(err)
 		}
 		defer producer.Close()
-		if err := producer.WriteEvent(&filesio.URLRecord{ID: uint(len(URLDb)), ShortURL: shortURL, OriginalURL: url}); err != nil {
+		if err := producer.WriteEvent(&filesio.URLRecord{ID: uint(len(URLDb)), ShortURL: url, OriginalURL: shortURL}); err != nil {
 			log.Fatal(err)
 		}
 	}
@@ -179,6 +179,7 @@ func ReturnURL(res http.ResponseWriter, req *http.Request) {
 
 func APIGetURL(res http.ResponseWriter, req *http.Request) {
 	var reqJSON models.Request
+	fmt.Println("************")
 	if req.Method != http.MethodPost { // Обрабатываем POST-запрос
 		res.WriteHeader(http.StatusBadRequest)
 		return
@@ -206,17 +207,17 @@ func APIGetURL(res http.ResponseWriter, req *http.Request) {
 		res.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	//record to file if path is not empty
-	if len(flags.FlagDBFilePath) > 1 {
-		Producer, err := filesio.NewProducer(flags.FlagDBFilePath)
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer Producer.Close()
-		if err := Producer.WriteEvent(&filesio.URLRecord{ID: uint(len(URLDb)), ShortURL: url, OriginalURL: reqJSON.URL}); err != nil {
-			log.Fatal(err)
-		}
-	}
+	// //record to file if path is not empty
+	// if len(flags.FlagDBFilePath) > 1 {
+	// 	Producer, err := filesio.NewProducer(flags.FlagDBFilePath)
+	// 	if err != nil {
+	// 		log.Fatal(err)
+	// 	}
+	// 	defer Producer.Close()
+	// 	if err := Producer.WriteEvent(&filesio.URLRecord{ID: uint(len(URLDb)), ShortURL: url, OriginalURL: reqJSON.URL}); err != nil {
+	// 		log.Fatal(err)
+	// 	}
+	// }
 
 }
 
