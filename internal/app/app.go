@@ -180,7 +180,6 @@ func ReturnURL(res http.ResponseWriter, req *http.Request) {
 
 func APIGetURL(res http.ResponseWriter, req *http.Request) {
 	var reqJSON models.Request
-	fmt.Println("************")
 	if req.Method != http.MethodPost { // Обрабатываем POST-запрос
 		res.WriteHeader(http.StatusBadRequest)
 		return
@@ -194,10 +193,8 @@ func APIGetURL(res http.ResponseWriter, req *http.Request) {
 	}
 
 	url := urlgen.GenerateShortKey() // генерируем короткую ссылку
-	// URLDb[url] = reqJSON.URL  // записываем в нашу БД
-	// URLDb[url] = filesio.URLRecord{ID: uint(len(URLDb)), ShortURL: url, OriginalURL: reqJSON.URL}
 	resultURL := saveDataAPI(url, reqJSON.URL)
-	// resultURL := flags.FlagResURL + "/" + url //  склеиваем ответ
+
 	resp := models.Response{
 		Result: resultURL,
 	}
@@ -246,7 +243,7 @@ func APIBatchGetURL(res http.ResponseWriter, req *http.Request) {
 	for i := range sliceReqJSON {
 		var newResponseRecord models.BatchResponse
 		newResponseRecord.CorrelationID = sliceReqJSON[i].CorrelationID
-		newResponseRecord.URL = sliceReqJSON[i].ShortURL
+		newResponseRecord.URL = flags.FlagResURL + "/" + sliceReqJSON[i].ShortURL
 		resp = append(resp, newResponseRecord)
 	}
 	if err := enc.Encode(resp); err != nil {
