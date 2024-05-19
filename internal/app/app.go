@@ -181,6 +181,24 @@ func APIGetURL(res http.ResponseWriter, req *http.Request) {
 
 }
 
+// [{"correlation_id":"8edc229b-b33e-42ad-b5ad-41be395532c6","original_url":"http://xwn34krdyhmz6r.com/tomwj"},{"correlation_id":"9de2b71f-1279-49c9-8081-bbcbac126334","original_url":"http://xae08jvk2j.biz/phqabbnxpiy/jlvxobs77nt"}]
 func APIBatchGetURL(res http.ResponseWriter, req *http.Request) {
+	var sliceReqJSON []models.BatchRequest
+	// var reqJSON models.BatchRequest
+	if req.Method != http.MethodPost { // Обрабатываем POST-запрос
+		res.WriteHeader(http.StatusBadRequest)
+		return
+
+	}
+	dec := json.NewDecoder(req.Body)
+	if err := dec.Decode(&sliceReqJSON); err != nil {
+		fmt.Println("parse error")
+		res.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	fmt.Println(sliceReqJSON)
+	for i, s := range sliceReqJSON {
+		fmt.Println(i, s)
+	}
 
 }

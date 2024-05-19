@@ -10,6 +10,11 @@ type Request struct {
 	URL string `json:"url"`
 }
 
+type BatchRequest struct {
+	CorrelationID string `json:"correlation_id"`
+	URL           string `json:"original_url"`
+}
+
 // // SimpleUtterance описывает команду, полученную в запросе типа SimpleUtterance.
 // type SimpleUtterance struct {
 // 	Type    string `json:"type"`
@@ -26,4 +31,9 @@ type Request struct {
 // ResponsePayload описывает ответ, который нужно озвучить.
 type Response struct {
 	Result string `json:"result"`
+}
+
+type BatchResponse struct {
+	CorrelationID string `json:"correlation_id"`
+	URL           string `json:"short_url"`
 }
