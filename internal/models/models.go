@@ -13,6 +13,7 @@ type Request struct {
 type BatchRequest struct {
 	CorrelationID string `json:"correlation_id"`
 	URL           string `json:"original_url"`
+	ShortURL      string
 }
 
 // // SimpleUtterance описывает команду, полученную в запросе типа SimpleUtterance.

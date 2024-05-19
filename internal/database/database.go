@@ -7,12 +7,8 @@ import (
 	"net/http"
 	"time"
 
-	// "fmt"
-
-	// "github.com/KznRkjp/go-link-shortner.git/internal/app"
 	"github.com/KznRkjp/go-link-shortner.git/internal/flags"
 	"github.com/KznRkjp/go-link-shortner.git/internal/models"
-	"github.com/KznRkjp/go-link-shortner.git/internal/urlgen"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
@@ -80,10 +76,10 @@ func WriteToDBBatch(listURL []models.BatchRequest) error {
 	}
 	for _, v := range listURL {
 		// все изменения записываются в транзакцию
-		shortURL := urlgen.GenerateShortKey()
+		// shortURL := urlgen.GenerateShortKey()
 		_, err := tx.ExecContext(ctx,
 			"INSERT INTO url (shorturl, originalurl, correlationid)"+
-				" VALUES($1,$2,$3)", shortURL, v.URL, v.CorrelationID)
+				" VALUES($1,$2,$3)", v.ShortURL, v.URL, v.CorrelationID)
 		if err != nil {
 			fmt.Println("error in here")
 			// если ошибка, то откатываем изменения

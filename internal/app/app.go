@@ -224,7 +224,10 @@ func APIBatchGetURL(res http.ResponseWriter, req *http.Request) {
 		res.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	fmt.Println(sliceReqJSON)
+
+	for i, _ := range sliceReqJSON {
+		sliceReqJSON[i].ShortURL = urlgen.GenerateShortKey()
+	}
 	err := database.WriteToDBBatch(sliceReqJSON)
 	if err != nil {
 		fmt.Println("error")
@@ -236,5 +239,17 @@ func APIBatchGetURL(res http.ResponseWriter, req *http.Request) {
 	// }
 	res.Header().Set("Content-Type", "application/json")
 	res.WriteHeader(http.StatusCreated)
+	enc := json.NewEncoder(res)
+	var resp []models.BatchResponse
+	for i, _ := range sliceReqJSON {
+		var newResponseRecord models.BatchResponse
+		newResponseRecord.CorrelationID = sliceReqJSON[i].CorrelationID
+		newResponseRecord.URL = sliceReqJSON[i].ShortURL
+		resp = append(resp, newResponseRecord)
+	}
+	if err := enc.Encode(resp); err != nil {
+		res.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
 }
