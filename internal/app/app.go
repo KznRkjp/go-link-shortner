@@ -77,7 +77,7 @@ func saveDataAPI(url string, shortURL string) string {
 		// URLDb[url] = reqJSON.URL  // записываем в нашу БД
 		// URLDb[url] = filesio.URLRecord{ID: uint(len(URLDb)), ShortURL: url, OriginalURL: reqJSON.URL}
 
-		URLDb[shortURL] = filesio.URLRecord{ID: uint(len(URLDb)), ShortURL: shortURL, OriginalURL: url}
+		URLDb[url] = filesio.URLRecord{ID: uint(len(URLDb)), ShortURL: url, OriginalURL: shortURL}
 		//record to file if path is not empty
 
 		producer, err := filesio.NewProducer(flags.FlagDBFilePath)
@@ -90,6 +90,7 @@ func saveDataAPI(url string, shortURL string) string {
 		}
 	}
 	resultURL := flags.FlagResURL + "/" + url //  склеиваем ответ
+	fmt.Println(URLDb)
 	return resultURL
 }
 
@@ -207,17 +208,6 @@ func APIGetURL(res http.ResponseWriter, req *http.Request) {
 		res.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	// //record to file if path is not empty
-	// if len(flags.FlagDBFilePath) > 1 {
-	// 	Producer, err := filesio.NewProducer(flags.FlagDBFilePath)
-	// 	if err != nil {
-	// 		log.Fatal(err)
-	// 	}
-	// 	defer Producer.Close()
-	// 	if err := Producer.WriteEvent(&filesio.URLRecord{ID: uint(len(URLDb)), ShortURL: url, OriginalURL: reqJSON.URL}); err != nil {
-	// 		log.Fatal(err)
-	// 	}
-	// }
 
 }
 
