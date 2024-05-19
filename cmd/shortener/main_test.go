@@ -26,7 +26,7 @@ func Test_mainPage_1(t *testing.T) {
 		{
 			name: "Test URL 1",
 			args: args{
-				code:        201,
+				code:        409,
 				url:         `https://yandex.ru`,
 				contentType: "text/plain",
 			},
@@ -34,7 +34,7 @@ func Test_mainPage_1(t *testing.T) {
 		{
 			name: "Test URL 2",
 			args: args{
-				code:        201,
+				code:        409,
 				url:         `https://google.com`,
 				contentType: "text/plain",
 			},
@@ -42,7 +42,7 @@ func Test_mainPage_1(t *testing.T) {
 		{
 			name: "Test URL 3",
 			args: args{
-				code:        201,
+				code:        409,
 				url:         `https://www.google.com/search?q=golang+tests+best+practices`,
 				contentType: "text/plain",
 			},
