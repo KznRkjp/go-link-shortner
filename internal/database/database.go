@@ -39,31 +39,52 @@ func CreateTable() {
 		panic(err)
 	}
 	defer conn.Close()
-	// _, tableCheck := conn.Query("select * from  url;")
-	// _ = _.Err()
-	// if tableCheck == nil {
-	// 	fmt.Println("table is there")
-	// } else {
-	// fmt.Println("table not there")
-	// dynamic
-	insertDynStmt := "CREATE TABLE url (id SERIAL PRIMARY KEY, shorturl TEXT, originalurl TEXT);"
+
+	insertDynStmt := "CREATE TABLE url (id SERIAL PRIMARY KEY, correlationid TEXT,shorturl TEXT, originalurl TEXT);"
 	_, err = conn.Exec(insertDynStmt)
 	if err != nil {
 		fmt.Println("Database exists")
 	}
-	// }
 
 }
 
-func WriteToDB(url string, originalURL string) {
+func WriteToDB(url string, originalURL string, correlationID string) {
 	conn, err := sql.Open("pgx", flags.FlagDBString)
 	if err != nil {
 		panic(err)
 	}
 	defer conn.Close()
-	insertDynStmt := `insert into "url"("shorturl", "originalurl") values($1, $2)`
-	_, err = conn.Exec(insertDynStmt, url, originalURL)
+	insertDynStmt := `insert into "url"("shorturl", "originalurl", "correlationid") values($1, $2, $3)`
+	if correlationID == "nil" {
+		_, err = conn.Exec(insertDynStmt, url, originalURL, nil)
+	} else {
+		_, err = conn.Exec(insertDynStmt, url, originalURL, correlationID)
+	}
 	if err != nil {
 		panic(err)
 	}
+}
+
+func GetFromDB(shortURL string) (string, error) {
+	conn, err := sql.Open("pgx", flags.FlagDBString)
+	if err != nil {
+		return "", err
+	}
+
+	defer conn.Close()
+	insertDynStmt := `SELECT originalurl, correlationid, shorturl FROM url where shorturl =` + shortURL
+
+	row := conn.QueryRowContext(context.Background(),
+		insertDynStmt)
+
+	// if err != nil {
+	// 	return "",err
+	// }
+	var originalURL string
+	err = row.Scan(&originalURL)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(originalURL)
+	return originalURL, err
 }

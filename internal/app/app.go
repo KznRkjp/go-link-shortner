@@ -40,6 +40,31 @@ func chekIfExists(fileName string) bool {
 	return true
 }
 
+func saveData(body []byte) string {
+
+	url := generateShortKey()
+
+	if flags.FlagDBString != "" {
+		database.WriteToDB(url, string(body), "nil")
+
+	} else if len(flags.FlagDBFilePath) > 1 {
+
+		URLDb[url] = filesio.URLRecord{ID: uint(len(URLDb)), ShortURL: url, OriginalURL: string(body)}
+		//record to file if path is not empty
+
+		producer, err := filesio.NewProducer(flags.FlagDBFilePath)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer producer.Close()
+		if err := producer.WriteEvent(&filesio.URLRecord{ID: uint(len(URLDb)), ShortURL: url, OriginalURL: string(body)}); err != nil {
+			log.Fatal(err)
+		}
+	}
+	resultURL := flags.FlagResURL + "/" + url //  склеиваем ответ
+	return resultURL
+}
+
 // Load data from file containg json records to our im memory DB
 func LoadDB(fileName string) {
 	chekIfExists(fileName)
@@ -75,28 +100,8 @@ func GetURL(res http.ResponseWriter, req *http.Request) {
 		http.Error(res, "can't read body", http.StatusBadRequest)
 		return
 	}
-	url := generateShortKey() // генерируем короткую ссылку
 
-	if flags.FlagDBString != "" {
-		database.WriteToDB(url, string(body))
-
-	} else if len(flags.FlagDBFilePath) > 1 {
-
-		URLDb[url] = filesio.URLRecord{ID: uint(len(URLDb)), ShortURL: url, OriginalURL: string(body)}
-		//record to file if path is not empty
-
-		producer, err := filesio.NewProducer(flags.FlagDBFilePath)
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer producer.Close()
-		if err := producer.WriteEvent(&filesio.URLRecord{ID: uint(len(URLDb)), ShortURL: url, OriginalURL: string(body)}); err != nil {
-			log.Fatal(err)
-		}
-
-	}
-
-	resultURL := flags.FlagResURL + "/" + url //  склеиваем ответ
+	resultURL := saveData(body)
 	res.Header().Set("content-type", "text/plain")
 	res.WriteHeader(http.StatusCreated)
 	res.Write([]byte(resultURL))
@@ -109,16 +114,31 @@ func ReturnURL(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 	shortURL := strings.Trim(req.RequestURI, "/")
-	// var result bool
-	resURL, ok := URLDb[shortURL]
-	fmt.Println(resURL.OriginalURL)
-	// If the key exists
-	if !ok {
-		res.WriteHeader(http.StatusBadRequest)
-		return
+
+	if flags.FlagDBString != "" {
+
+		resURL, err := database.GetFromDB(shortURL)
+		if err != nil {
+			res.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		res.Header().Set("Location", resURL)
+
+	} else if len(flags.FlagDBFilePath) > 1 {
+		// var result bool
+
+		resURLStruct, ok := URLDb[shortURL]
+		resURL := resURLStruct.OriginalURL
+		// fmt.Println(resURL.OriginalURL)
+		// If the key exists
+		if !ok {
+			res.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		res.Header().Set("Location", resURL)
 	}
 
-	res.Header().Set("Location", resURL.OriginalURL) //  !!!!
+	//  !!!!
 	res.WriteHeader(http.StatusTemporaryRedirect)
 	// return
 
