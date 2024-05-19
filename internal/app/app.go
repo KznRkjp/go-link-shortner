@@ -68,6 +68,29 @@ func saveData(body []byte) string {
 	return resultURL
 }
 
+func saveDataApi(url string, shortURL string) string {
+
+	if flags.FlagDBString != "" {
+		database.WriteToDB(shortURL, url, "nil")
+
+	} else if len(flags.FlagDBFilePath) > 1 {
+
+		URLDb[shortURL] = filesio.URLRecord{ID: uint(len(URLDb)), ShortURL: shortURL, OriginalURL: url}
+		//record to file if path is not empty
+
+		producer, err := filesio.NewProducer(flags.FlagDBFilePath)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer producer.Close()
+		if err := producer.WriteEvent(&filesio.URLRecord{ID: uint(len(URLDb)), ShortURL: url, OriginalURL: string(body)}); err != nil {
+			log.Fatal(err)
+		}
+	}
+	resultURL := flags.FlagResURL + "/" + url //  склеиваем ответ
+	return resultURL
+}
+
 // Load data from file containg json records to our im memory DB
 func LoadDB(fileName string) {
 	chekIfExists(fileName)
@@ -152,19 +175,6 @@ func ReturnURL(res http.ResponseWriter, req *http.Request) {
 
 }
 
-// func GenerateShortKey() string {
-// 	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-// 	const keyLength = 8
-
-// 	source := rand.NewSource(time.Now().UnixNano())
-// 	rng := rand.New(source)
-// 	shortKey := make([]byte, keyLength)
-// 	for i := range shortKey {
-// 		shortKey[i] = charset[rng.Intn(len(charset))]
-// 	}
-// 	return string(shortKey)
-// }
-
 func APIGetURL(res http.ResponseWriter, req *http.Request) {
 	var reqJSON models.Request
 	if req.Method != http.MethodPost { // Обрабатываем POST-запрос
@@ -182,9 +192,9 @@ func APIGetURL(res http.ResponseWriter, req *http.Request) {
 	// fmt.Println(reqJSON.URL)
 	url := urlgen.GenerateShortKey() // генерируем короткую ссылку
 	// URLDb[url] = reqJSON.URL  // записываем в нашу БД
-	URLDb[url] = filesio.URLRecord{ID: uint(len(URLDb)), ShortURL: url, OriginalURL: reqJSON.URL}
-
-	resultURL := flags.FlagResURL + "/" + url //  склеиваем ответ
+	// URLDb[url] = filesio.URLRecord{ID: uint(len(URLDb)), ShortURL: url, OriginalURL: reqJSON.URL}
+	resultURL := saveDataApi(url, reqJSON.URL)
+	// resultURL := flags.FlagResURL + "/" + url //  склеиваем ответ
 	resp := models.Response{
 		Result: resultURL,
 	}
