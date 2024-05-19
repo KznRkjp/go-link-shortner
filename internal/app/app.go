@@ -180,3 +180,7 @@ func APIGetURL(res http.ResponseWriter, req *http.Request) {
 	}
 
 }
+
+func APIBatchGetURL(res http.ResponseWriter, req *http.Request) {
+
+}
