@@ -136,6 +136,15 @@ func ReturnURL(res http.ResponseWriter, req *http.Request) {
 			return
 		}
 		res.Header().Set("Location", resURL)
+	} else {
+		resURLStruct, ok := URLDb[shortURL]
+		resURL := resURLStruct.OriginalURL
+		if !ok {
+			res.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		res.Header().Set("Location", resURL)
+
 	}
 
 	//  !!!!
