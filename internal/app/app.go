@@ -57,7 +57,8 @@ func saveData(body []byte) string {
 
 		producer, err := filesio.NewProducer(flags.FlagDBFilePath)
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
+
 		}
 		defer producer.Close()
 		if err := producer.WriteEvent(&filesio.URLRecord{ID: uint(len(URLDb)), ShortURL: url, OriginalURL: string(body)}); err != nil {
@@ -130,7 +131,7 @@ func GetURL(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	shortURL, err := database.CheckForDuplicates(string(body), URLDb)
+	shortURL, err := database.CheckForDuplicates(req.Context(), string(body), URLDb)
 	if err != nil {
 		resultURL := saveData(body)
 		res.Header().Set("content-type", "text/plain")
@@ -199,7 +200,7 @@ func APIGetURL(res http.ResponseWriter, req *http.Request) {
 		res.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	shortURL, err := database.CheckForDuplicates(reqJSON.URL, URLDb)
+	shortURL, err := database.CheckForDuplicates(req.Context(), reqJSON.URL, URLDb)
 	if err != nil {
 		url := urlgen.GenerateShortKey() // генерируем короткую ссылку
 		resultURL := saveDataAPI(url, reqJSON.URL)

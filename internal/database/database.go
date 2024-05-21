@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
@@ -17,7 +18,7 @@ func Ping(res http.ResponseWriter, req *http.Request) {
 	// flags.ParseFlags()
 	conn, err := sql.Open("pgx", flags.FlagDBString)
 	if err != nil {
-		panic(err)
+		log.Println(err)
 	}
 	defer conn.Close()
 
@@ -34,15 +35,15 @@ func CreateTable() {
 	fmt.Println("DB String", flags.FlagDBString)
 	conn, err := sql.Open("pgx", flags.FlagDBString)
 	if err != nil {
-		fmt.Println("DB error")
-		panic(err)
+		// fmt.Println("DB error")
+		log.Panic(err)
 	}
 	defer conn.Close()
 
 	insertDynStmt := "CREATE TABLE url (id SERIAL PRIMARY KEY, correlationid TEXT,shorturl TEXT, originalurl TEXT);"
 	_, err = conn.Exec(insertDynStmt)
 	if err != nil {
-		fmt.Println("Database exists")
+		log.Println("Database exists", err)
 	}
 
 }
@@ -50,7 +51,7 @@ func CreateTable() {
 func WriteToDB(url string, originalURL string, correlationID string) {
 	conn, err := sql.Open("pgx", flags.FlagDBString)
 	if err != nil {
-		panic(err)
+		log.Println(err)
 	}
 	defer conn.Close()
 	insertDynStmt := `insert into "url"("shorturl", "originalurl", "correlationid") values($1, $2, $3)`
@@ -60,7 +61,7 @@ func WriteToDB(url string, originalURL string, correlationID string) {
 		_, err = conn.Exec(insertDynStmt, url, originalURL, correlationID)
 	}
 	if err != nil {
-		panic(err)
+		log.Println(err)
 	}
 }
 
@@ -119,7 +120,7 @@ func GetFromDB(shortURL string) (string, error) {
 	return originalurl, err
 }
 
-func CheckForDuplicates(URL string, URLDb map[string]filesio.URLRecord) (string, error) {
+func CheckForDuplicates(ctx context.Context, URL string, URLDb map[string]filesio.URLRecord) (string, error) {
 	if flags.FlagDBString != "" {
 
 		conn, err := sql.Open("pgx", flags.FlagDBString)
@@ -130,7 +131,7 @@ func CheckForDuplicates(URL string, URLDb map[string]filesio.URLRecord) (string,
 		defer conn.Close()
 		insertDynStmt := `SELECT shorturl FROM url where originalurl = '` + URL + `'`
 
-		row := conn.QueryRowContext(context.Background(),
+		row := conn.QueryRowContext(ctx,
 			insertDynStmt)
 		fmt.Println("Check for duplicates")
 
