@@ -39,16 +39,16 @@ func CreateTable() {
 		log.Panic(err)
 	}
 	defer conn.Close()
-
+	ctx := context.Background()
 	insertDynStmt := "CREATE TABLE url (id SERIAL PRIMARY KEY, correlationid TEXT,shorturl TEXT, originalurl TEXT);"
-	_, err = conn.Exec(insertDynStmt)
+	_, err = conn.ExecContext(ctx, insertDynStmt)
 	if err != nil {
 		log.Println("Database exists", err)
 	}
 
 }
 
-func WriteToDB(url string, originalURL string, correlationID string) {
+func WriteToDB(ctx context.Context, url string, originalURL string, correlationID string) {
 	conn, err := sql.Open("pgx", flags.FlagDBString)
 	if err != nil {
 		log.Println(err)
@@ -56,22 +56,22 @@ func WriteToDB(url string, originalURL string, correlationID string) {
 	defer conn.Close()
 	insertDynStmt := `insert into "url"("shorturl", "originalurl", "correlationid") values($1, $2, $3)`
 	if correlationID == "nil" {
-		_, err = conn.Exec(insertDynStmt, url, originalURL, nil)
+		_, err = conn.ExecContext(ctx, insertDynStmt, url, originalURL, nil)
 	} else {
-		_, err = conn.Exec(insertDynStmt, url, originalURL, correlationID)
+		_, err = conn.ExecContext(ctx, insertDynStmt, url, originalURL, correlationID)
 	}
 	if err != nil {
 		log.Println(err)
 	}
 }
 
-func WriteToDBBatch(listURL []models.BatchRequest) error {
+func WriteToDBBatch(ctx context.Context, listURL []models.BatchRequest) error {
 	conn, err := sql.Open("pgx", flags.FlagDBString)
 	if err != nil {
 		return err
 	}
 	defer conn.Close()
-	ctx := context.Background()
+	// ctx := context.Background()
 	tx, err := conn.Begin()
 	if err != nil {
 		return err
@@ -94,7 +94,7 @@ func WriteToDBBatch(listURL []models.BatchRequest) error {
 
 }
 
-func GetFromDB(shortURL string) (string, error) {
+func GetFromDB(ctx context.Context, shortURL string) (string, error) {
 	conn, err := sql.Open("pgx", flags.FlagDBString)
 	if err != nil {
 		return "", err
@@ -103,7 +103,7 @@ func GetFromDB(shortURL string) (string, error) {
 	defer conn.Close()
 	insertDynStmt := `SELECT originalurl FROM url where shorturl = '` + shortURL + `'`
 
-	row := conn.QueryRowContext(context.Background(),
+	row := conn.QueryRowContext(ctx,
 		insertDynStmt)
 
 	// if err != nil {

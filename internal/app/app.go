@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -43,12 +44,12 @@ func chekIfExists(fileName string) bool {
 	return true
 }
 
-func saveData(body []byte) string {
+func saveData(ctx context.Context, body []byte) string {
 
 	url := urlgen.GenerateShortKey()
 
 	if flags.FlagDBString != "" {
-		database.WriteToDB(url, string(body), "nil")
+		database.WriteToDB(ctx, url, string(body), "nil")
 
 	} else if len(flags.FlagDBFilePath) > 1 {
 
@@ -69,10 +70,10 @@ func saveData(body []byte) string {
 	return resultURL
 }
 
-func saveDataAPI(url string, shortURL string) string {
+func saveDataAPI(ctx context.Context, url string, shortURL string) string {
 
 	if flags.FlagDBString != "" {
-		database.WriteToDB(url, shortURL, "nil")
+		database.WriteToDB(ctx, url, shortURL, "nil")
 
 	} else if len(flags.FlagDBFilePath) > 1 {
 		// URLDb[url] = reqJSON.URL  // записываем в нашу БД
@@ -133,7 +134,7 @@ func GetURL(res http.ResponseWriter, req *http.Request) {
 
 	shortURL, err := database.CheckForDuplicates(req.Context(), string(body), URLDb)
 	if err != nil {
-		resultURL := saveData(body)
+		resultURL := saveData(req.Context(), body)
 		res.Header().Set("content-type", "text/plain")
 		res.WriteHeader(http.StatusCreated)
 		res.Write([]byte(resultURL))
@@ -155,7 +156,7 @@ func ReturnURL(res http.ResponseWriter, req *http.Request) {
 
 	if flags.FlagDBString != "" {
 
-		resURL, err := database.GetFromDB(shortURL)
+		resURL, err := database.GetFromDB(req.Context(), shortURL)
 		if err != nil {
 			res.WriteHeader(http.StatusBadRequest)
 			return
@@ -203,7 +204,7 @@ func APIGetURL(res http.ResponseWriter, req *http.Request) {
 	shortURL, err := database.CheckForDuplicates(req.Context(), reqJSON.URL, URLDb)
 	if err != nil {
 		url := urlgen.GenerateShortKey() // генерируем короткую ссылку
-		resultURL := saveDataAPI(url, reqJSON.URL)
+		resultURL := saveDataAPI(req.Context(), url, reqJSON.URL)
 		resp := models.Response{
 			Result: resultURL,
 		}
@@ -248,7 +249,7 @@ func APIBatchGetURL(res http.ResponseWriter, req *http.Request) {
 	for i := range sliceReqJSON {
 		sliceReqJSON[i].ShortURL = urlgen.GenerateShortKey()
 	}
-	err := database.WriteToDBBatch(sliceReqJSON)
+	err := database.WriteToDBBatch(req.Context(), sliceReqJSON)
 	if err != nil {
 		fmt.Println("error")
 		res.WriteHeader(http.StatusInternalServerError)
