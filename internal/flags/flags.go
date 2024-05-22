@@ -2,6 +2,7 @@ package flags
 
 import (
 	"flag"
+	"fmt"
 	"os"
 )
 
@@ -9,6 +10,7 @@ import (
 var FlagRunAddr string
 var FlagResURL string
 var FlagDBFilePath string
+var FlagDBString string
 
 // parseFlags обрабатывает аргументы командной строки
 // и сохраняет их значения в соответствующих переменных
@@ -20,7 +22,11 @@ func ParseFlags() {
 	flag.StringVar(&FlagResURL, "b", "http://localhost:8080", "result URL")
 	// регистрируем переменную DBFilePath
 	flag.StringVar(&FlagDBFilePath, "f", "/tmp/short-url-db.json", "Full path to DB file")
-
+	// регистрируем переменную FlagDBString - для подлкючения к базе данных
+	ps := fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=disable",
+		`localhost`, `url`, `dwwq34zf!3`, `url`)
+	fmt.Println(ps)
+	flag.StringVar(&FlagDBString, "d", "", "String for DB connection")
 	// парсим переданные серверу аргументы в зарегистрированные переменные
 	flag.Parse()
 
@@ -32,5 +38,8 @@ func ParseFlags() {
 	}
 	if envDBFilePath := os.Getenv("FILE_STORAGE_PATH"); envDBFilePath != "" {
 		FlagDBFilePath = envDBFilePath
+	}
+	if envDBString := os.Getenv("DATABASE_DSN"); envDBString != "" {
+		FlagDBString = envDBString
 	}
 }

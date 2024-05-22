@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/KznRkjp/go-link-shortner.git/internal/app"
+	"github.com/KznRkjp/go-link-shortner.git/internal/database"
 	"github.com/KznRkjp/go-link-shortner.git/internal/flags"
 	"github.com/KznRkjp/go-link-shortner.git/internal/middleware/middlelogger"
 	"github.com/KznRkjp/go-link-shortner.git/internal/router"
@@ -14,7 +15,10 @@ import (
 func main() {
 
 	flags.ParseFlags()
-	if len(flags.FlagDBFilePath) > 0 {
+	if flags.FlagDBString != "" {
+		database.CreateTable()
+
+	} else if len(flags.FlagDBFilePath) > 0 {
 		_, err := os.OpenFile(flags.FlagDBFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
 			log.Fatal(err)
