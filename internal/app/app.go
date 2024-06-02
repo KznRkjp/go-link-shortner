@@ -345,6 +345,7 @@ func APIGetUsersURLs(res http.ResponseWriter, req *http.Request) {
 		res.WriteHeader(http.StatusNoContent)
 		return
 	}
+	res.Header().Set("Content-Type", "application/json")
 	enc := json.NewEncoder(res)
 	var resp []models.URLResponse
 	for i := range urls {
