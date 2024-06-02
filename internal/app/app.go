@@ -155,7 +155,7 @@ func GetURL(res http.ResponseWriter, req *http.Request) {
 
 }
 
-func ManageCookie(req *http.Request) (string, string) {
+func ManageCookie(req *http.Request) (uuid string, token string) {
 	uuid, err := users.Access(req) // Проверям наличие куки, получаем из него uuid
 	if err != nil {
 		fmt.Println("Error in token")

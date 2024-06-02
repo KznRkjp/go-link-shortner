@@ -146,10 +146,10 @@ func CheckForDuplicates(ctx context.Context, URL string, URLDb map[string]filesi
 		}
 		defer conn.Close()
 		if uuid != "" {
-			insertDynStmt := `SELECT shorturl FROM url where originalurl = $1 and url_user_uuid = $2`
-
+			// insertDynStmt := `SELECT shorturl FROM url where originalurl = $1 and url_user_uuid = $2`
+			insertDynStmt := `SELECT shorturl FROM url where originalurl = $1`
 			row := conn.QueryRowContext(ctx,
-				insertDynStmt, URL, uuid)
+				insertDynStmt, URL)
 			fmt.Println("Checking for duplicates")
 
 			var shorturl string
@@ -160,8 +160,11 @@ func CheckForDuplicates(ctx context.Context, URL string, URLDb map[string]filesi
 				log.Println("Duplicates not found")
 				return "", err
 			}
+
 			fmt.Println("Duplicates found")
 			return shorturl, err
+
+		} else {
 
 		}
 		insertDynStmt := `SELECT shorturl FROM url where originalurl = '` + URL + `'`
