@@ -11,7 +11,11 @@ import (
 	"github.com/KznRkjp/go-link-shortner.git/internal/filesio"
 	"github.com/KznRkjp/go-link-shortner.git/internal/flags"
 	"github.com/KznRkjp/go-link-shortner.git/internal/models"
+	"github.com/KznRkjp/go-link-shortner.git/internal/users"
+
+	// "github.com/KznRkjp/go-link-shortner.git/internal/users"
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/lithammer/shortuuid"
 )
 
 func Ping(res http.ResponseWriter, req *http.Request) {
@@ -40,32 +44,45 @@ func CreateTable() {
 	}
 	defer conn.Close()
 	ctx := context.Background()
-	insertDynStmt := "CREATE TABLE url (id SERIAL PRIMARY KEY, correlationid TEXT,shorturl TEXT, originalurl TEXT);"
-	_, err = conn.ExecContext(ctx, insertDynStmt)
+	insertDynStmtUser := `CREATE TABLE url_users (id SERIAL PRIMARY KEY, uuid TEXT UNIQUE, token TEXT);`
+	_, err = conn.ExecContext(ctx, insertDynStmtUser)
 	if err != nil {
-		log.Println("Database exists", err)
+		log.Println("Database user exists", err)
+	}
+
+	insertDynStmtURL := `CREATE TABLE url (id SERIAL PRIMARY KEY,
+		 									correlationid TEXT,
+											url_user_uuid TEXT,
+											shorturl TEXT, 
+											originalurl TEXT,
+											CONSTRAINT fk_url_user_uuid FOREIGN KEY (url_user_uuid) REFERENCES url_users (uuid));`
+	_, err = conn.ExecContext(ctx, insertDynStmtURL)
+	if err != nil {
+		log.Println("Database url exists", err)
 	}
 
 }
 
-func WriteToDB(ctx context.Context, url string, originalURL string, correlationID string) {
+func WriteToDB(ctx context.Context, url string, originalURL string, correlationID string, uuid string) {
 	conn, err := sql.Open("pgx", flags.FlagDBString)
 	if err != nil {
 		log.Println(err)
 	}
 	defer conn.Close()
-	insertDynStmt := `insert into "url"("shorturl", "originalurl", "correlationid") values($1, $2, $3)`
+	insertDynStmt := `insert into "url"("shorturl", "originalurl", "correlationid", "url_user_uuid") values($1, $2, $3, $4)`
 	if correlationID == "nil" {
-		_, err = conn.ExecContext(ctx, insertDynStmt, url, originalURL, nil)
+		_, err = conn.ExecContext(ctx, insertDynStmt, url, originalURL, nil, uuid)
 	} else {
-		_, err = conn.ExecContext(ctx, insertDynStmt, url, originalURL, correlationID)
+		_, err = conn.ExecContext(ctx, insertDynStmt, url, originalURL, correlationID, uuid)
 	}
 	if err != nil {
 		log.Println(err)
+
 	}
+	CreateUser(ctx)
 }
 
-func WriteToDBBatch(ctx context.Context, listURL []models.BatchRequest) error {
+func WriteToDBBatch(ctx context.Context, listURL []models.BatchRequest, uuid string) error {
 	conn, err := sql.Open("pgx", flags.FlagDBString)
 	if err != nil {
 		return err
@@ -80,8 +97,8 @@ func WriteToDBBatch(ctx context.Context, listURL []models.BatchRequest) error {
 		// все изменения записываются в транзакцию
 		// shortURL := urlgen.GenerateShortKey()
 		_, err := tx.ExecContext(ctx,
-			"INSERT INTO url (shorturl, originalurl, correlationid)"+
-				" VALUES($1,$2,$3)", v.ShortURL, v.URL, v.CorrelationID)
+			"INSERT INTO url (shorturl, originalurl, correlationid, url_user_uuid)"+
+				" VALUES($1,$2,$3)", v.ShortURL, v.URL, v.CorrelationID, uuid)
 		if err != nil {
 			fmt.Println("error in here")
 			// если ошибка, то откатываем изменения
@@ -120,15 +137,32 @@ func GetFromDB(ctx context.Context, shortURL string) (string, error) {
 	return originalurl, err
 }
 
-func CheckForDuplicates(ctx context.Context, URL string, URLDb map[string]filesio.URLRecord) (string, error) {
+func CheckForDuplicates(ctx context.Context, URL string, URLDb map[string]filesio.URLRecord, uuid string) (string, error) {
 	if flags.FlagDBString != "" {
-
 		conn, err := sql.Open("pgx", flags.FlagDBString)
 		if err != nil {
 			return "", err
 		}
-
 		defer conn.Close()
+		if uuid != "" {
+			insertDynStmt := `SELECT shorturl FROM url where originalurl = $1 and url_user_uuid = $2`
+
+			row := conn.QueryRowContext(ctx,
+				insertDynStmt, URL, uuid)
+			fmt.Println("Checking for duplicates")
+
+			var shorturl string
+
+			err = row.Scan(&shorturl)
+
+			if err != nil {
+				log.Println("Duplicates not found")
+				return "", err
+			}
+			fmt.Println("Duplicates found")
+			return shorturl, err
+
+		}
 		insertDynStmt := `SELECT shorturl FROM url where originalurl = '` + URL + `'`
 
 		row := conn.QueryRowContext(ctx,
@@ -153,4 +187,85 @@ func CheckForDuplicates(ctx context.Context, URL string, URLDb map[string]filesi
 		return "", fmt.Errorf("duplicate url (id: %s)", URL)
 	}
 	return "", nil
+}
+
+func GetUserFromDB(ctx context.Context, uuid string) (int, error) {
+	conn, err := sql.Open("pgx", flags.FlagDBString)
+	if err != nil {
+		return -1, err
+	}
+	defer conn.Close()
+	insertDynStmt := `SELECT id FROM url_users where uuid = '` + uuid + `'`
+	row := conn.QueryRowContext(ctx,
+		insertDynStmt)
+	var id int
+
+	err = row.Scan(&id)
+
+	if err != nil {
+		panic(err)
+	}
+
+	return id, err
+
+}
+
+func UpdateUserToken(ctx context.Context, uuid string, token string) error {
+	conn, err := sql.Open("pgx", flags.FlagDBString)
+	if err != nil {
+		log.Println(err)
+	}
+	defer conn.Close()
+	insertDynStmt := `UPDATE url_users SET token = $2 WHERE uuid = $1`
+	_, err = conn.ExecContext(ctx, insertDynStmt, uuid, token)
+	if err != nil {
+		fmt.Println("Error updating token: ", err)
+		return err
+	}
+	return err
+
+}
+
+func CreateUser(ctx context.Context) (string, string, error) {
+	conn, err := sql.Open("pgx", flags.FlagDBString)
+	if err != nil {
+		log.Println(err)
+	}
+	defer conn.Close()
+	uuid := shortuuid.New()
+	insertDynStmt := `insert into "url_users"("uuid", "token") values($1, $2)`
+	token, err := users.BuildJWTString(uuid)
+
+	if err != nil {
+		log.Println(err)
+		return "", "", err
+
+	}
+
+	_, err = conn.ExecContext(ctx, insertDynStmt, uuid, token)
+	if err != nil {
+		log.Println(err)
+		return "", "", err
+
+	}
+	return uuid, token, nil
+
+}
+
+func GetOrCreateUser(ctx context.Context, uuid string) (string, string, error) {
+	_, err := GetUserFromDB(ctx, uuid)
+	if err != nil {
+		log.Println(err)
+		log.Println("Creating new user")
+		newUuid, token, err := CreateUser(ctx)
+		if err != nil {
+			return newUuid, token, err
+		} else {
+			return newUuid, token, err
+		}
+
+	} else {
+		return uuid, "", err
+	}
+
 }

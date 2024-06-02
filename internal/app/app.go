@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"time"
 
 	// "math/rand"
 	"net/http"
@@ -20,6 +21,7 @@ import (
 	"github.com/KznRkjp/go-link-shortner.git/internal/flags"
 	"github.com/KznRkjp/go-link-shortner.git/internal/models"
 	"github.com/KznRkjp/go-link-shortner.git/internal/urlgen"
+	"github.com/KznRkjp/go-link-shortner.git/internal/users"
 )
 
 func check(e error) {
@@ -44,12 +46,12 @@ func chekIfExists(fileName string) bool {
 	return true
 }
 
-func saveData(ctx context.Context, body []byte) string {
+func saveData(ctx context.Context, body []byte, uuid string) string {
 
 	url := urlgen.GenerateShortKey()
 
 	if flags.FlagDBString != "" {
-		database.WriteToDB(ctx, url, string(body), "nil")
+		database.WriteToDB(ctx, url, string(body), "nil", uuid)
 
 	} else if len(flags.FlagDBFilePath) > 1 {
 
@@ -70,10 +72,10 @@ func saveData(ctx context.Context, body []byte) string {
 	return resultURL
 }
 
-func saveDataAPI(ctx context.Context, url string, shortURL string) string {
+func saveDataAPI(ctx context.Context, url string, shortURL string, uuid string) string {
 
 	if flags.FlagDBString != "" {
-		database.WriteToDB(ctx, url, shortURL, "nil")
+		database.WriteToDB(ctx, url, shortURL, "nil", uuid)
 
 	} else if len(flags.FlagDBFilePath) > 1 {
 		// URLDb[url] = reqJSON.URL  // записываем в нашу БД
@@ -119,32 +121,52 @@ func LoadDB(fileName string) {
 }
 
 func GetURL(res http.ResponseWriter, req *http.Request) {
-
-	if req.Method != http.MethodPost { // Обрабатываем POST-запрос
+	if req.Method != http.MethodPost { // Откидываем не POST-запрос
 		res.WriteHeader(http.StatusBadRequest)
 		return
 	}
-
-	// host := req.Host                // получаем значение нашего хоста
 	body, err := io.ReadAll(req.Body) // достаем данные из body
 	if err != nil {                   // валидация
 		http.Error(res, "can't read body", http.StatusBadRequest)
 		return
 	}
+	// Часть про куки
+	uuid, token := ManageCookie(req)
+	fmt.Println(uuid)
+	expiration := time.Now().Add(365 * 24 * time.Hour)
+	cookie := http.Cookie{Name: "JWT", Value: token, Expires: expiration}
+	http.SetCookie(res, &cookie)
+	// Пока закончили про куки
 
-	shortURL, err := database.CheckForDuplicates(req.Context(), string(body), URLDb)
+	shortURL, err := database.CheckForDuplicates(req.Context(), string(body), URLDb, uuid)
+
 	if err != nil {
-		resultURL := saveData(req.Context(), body)
+		resultURL := saveData(req.Context(), body, uuid)
 		res.Header().Set("content-type", "text/plain")
 		res.WriteHeader(http.StatusCreated)
 		res.Write([]byte(resultURL))
+
 	} else {
 		res.Header().Set("content-type", "text/plain")
 		res.WriteHeader(http.StatusConflict)
 		res.Write([]byte(flags.FlagResURL + "/" + shortURL))
-
+		fmt.Println(err)
 	}
 
+}
+
+func ManageCookie(req *http.Request) (string, string) {
+	uuid, err := users.Access(req) // Проверям наличие куки, получаем из него uuid
+	if err != nil {
+		fmt.Println("Error in token")
+		if uuid != "" { //если удалось получить uuid, но есть проблема в валидностью tokena, делаем новый
+			fmt.Println("starting token update for", uuid)
+			token, _ := users.BuildJWTString(uuid) // это надо вернуть в куки.
+			database.UpdateUserToken(req.Context(), uuid, token)
+			return uuid, token
+		}
+	}
+	return uuid, ""
 }
 
 func ReturnURL(res http.ResponseWriter, req *http.Request) {
@@ -189,22 +211,31 @@ func ReturnURL(res http.ResponseWriter, req *http.Request) {
 }
 
 func APIGetURL(res http.ResponseWriter, req *http.Request) {
+
 	var reqJSON models.Request
 	if req.Method != http.MethodPost { // Обрабатываем POST-запрос
 		res.WriteHeader(http.StatusBadRequest)
 		return
 
 	}
+	// Часть про куки
+	uuid, token := ManageCookie(req)
+	fmt.Println(uuid)
+	expiration := time.Now().Add(365 * 24 * time.Hour)
+	cookie := http.Cookie{Name: "JWT", Value: token, Expires: expiration}
+	http.SetCookie(res, &cookie)
+	// Пока закончили про куки
+
 	dec := json.NewDecoder(req.Body)
 	if err := dec.Decode(&reqJSON); err != nil {
 		fmt.Println("parse error")
 		res.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	shortURL, err := database.CheckForDuplicates(req.Context(), reqJSON.URL, URLDb)
+	shortURL, err := database.CheckForDuplicates(req.Context(), reqJSON.URL, URLDb, uuid)
 	if err != nil {
 		url := urlgen.GenerateShortKey() // генерируем короткую ссылку
-		resultURL := saveDataAPI(req.Context(), url, reqJSON.URL)
+		resultURL := saveDataAPI(req.Context(), url, reqJSON.URL, uuid)
 		resp := models.Response{
 			Result: resultURL,
 		}
@@ -234,11 +265,20 @@ func APIGetURL(res http.ResponseWriter, req *http.Request) {
 func APIBatchGetURL(res http.ResponseWriter, req *http.Request) {
 	var sliceReqJSON []models.BatchRequest
 	// var reqJSON models.BatchRequest
-	if req.Method != http.MethodPost { // Обрабатываем POST-запрос
+	if req.Method != http.MethodPost { // Откидываем POST-запрос
 		res.WriteHeader(http.StatusBadRequest)
 		return
 
 	}
+
+	// Часть про куки
+	uuid, token := ManageCookie(req)
+	fmt.Println(uuid)
+	expiration := time.Now().Add(365 * 24 * time.Hour)
+	cookie := http.Cookie{Name: "JWT", Value: token, Expires: expiration}
+	http.SetCookie(res, &cookie)
+	// Пока закончили про куки
+
 	dec := json.NewDecoder(req.Body)
 	if err := dec.Decode(&sliceReqJSON); err != nil {
 		fmt.Println("parse error")
@@ -249,7 +289,7 @@ func APIBatchGetURL(res http.ResponseWriter, req *http.Request) {
 	for i := range sliceReqJSON {
 		sliceReqJSON[i].ShortURL = urlgen.GenerateShortKey()
 	}
-	err := database.WriteToDBBatch(req.Context(), sliceReqJSON)
+	err := database.WriteToDBBatch(req.Context(), sliceReqJSON, uuid)
 	if err != nil {
 		fmt.Println("error")
 		res.WriteHeader(http.StatusInternalServerError)
