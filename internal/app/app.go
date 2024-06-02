@@ -272,7 +272,7 @@ func APIGetURL(res http.ResponseWriter, req *http.Request) {
 func APIBatchGetURL(res http.ResponseWriter, req *http.Request) {
 	var sliceReqJSON []models.BatchRequest
 	// var reqJSON models.BatchRequest
-	if req.Method != http.MethodPost { // Откидываем POST-запрос
+	if req.Method != http.MethodPost { // Откидываем не POST-запрос
 		res.WriteHeader(http.StatusBadRequest)
 		return
 
@@ -320,4 +320,34 @@ func APIBatchGetURL(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+}
+
+func APIGetUsersURLs(res http.ResponseWriter, req *http.Request) {
+	if req.Method != http.MethodGet { // Откидываем не Get-запрос
+		res.WriteHeader(http.StatusBadRequest)
+		return
+
+	}
+	uuid, err := users.Access(req)
+	if err != nil {
+		res.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	urls, err := database.GetUsersUrls(req.Context(), uuid)
+	if err != nil {
+		log.Println(err)
+	}
+	fmt.Println(urls)
+	enc := json.NewEncoder(res)
+	var resp []models.UrlResponse
+	for i := range urls {
+		var newResponseRecord models.UrlResponse
+		newResponseRecord.OriginalURL = urls[i].OriginalURL
+		newResponseRecord.ShortUrl = flags.FlagResURL + "/" + urls[i].ShortUrl
+		resp = append(resp, newResponseRecord)
+	}
+	if err := enc.Encode(resp); err != nil {
+		res.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 }

@@ -163,9 +163,6 @@ func CheckForDuplicates(ctx context.Context, URL string, URLDb map[string]filesi
 
 			fmt.Println("Duplicates found")
 			return shorturl, err
-
-		} else {
-
 		}
 		insertDynStmt := `SELECT shorturl FROM url where originalurl = '` + URL + `'`
 
@@ -271,5 +268,32 @@ func GetOrCreateUser(ctx context.Context, uuid string) (string, string, error) {
 	} else {
 		return uuid, "", err
 	}
+
+}
+
+func GetUsersUrls(ctx context.Context, uuid string) ([]models.UrlResponse, error) {
+	conn, err := sql.Open("pgx", flags.FlagDBString)
+	if err != nil {
+		log.Println(err)
+	}
+	defer conn.Close()
+	insertDynStmt := `SELECT shorturl, originalurl FROM url WHERE url_user_uuid = $1`
+	fmt.Println("!!!!!!", uuid)
+	rows, err := conn.QueryContext(ctx, insertDynStmt, uuid)
+	if err != nil {
+		log.Println(err)
+	}
+
+	var urls []models.UrlResponse
+	for rows.Next() {
+		var url models.UrlResponse
+		if err := rows.Scan(&url.ShortUrl, &url.OriginalURL); err != nil {
+			return urls, err
+		}
+		urls = append(urls, url)
+
+	}
+	// fmt.Println(urls)
+	return urls, err
 
 }

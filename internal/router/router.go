@@ -17,6 +17,7 @@ func Main() chi.Router {
 	r.Get("/{id}", gzipper.GzipMiddleware(app.ReturnURL))
 	r.Post("/api/shorten", gzipper.GzipMiddleware(app.APIGetURL))
 	r.Post("/api/shorten/batch", gzipper.GzipMiddleware(app.APIBatchGetURL))
+	r.Get("/api/user/urls", gzipper.GzipMiddleware(app.APIGetUsersURLs))
 	r.Get("/ping", gzipper.GzipMiddleware(database.Ping))
 	return r
 }
