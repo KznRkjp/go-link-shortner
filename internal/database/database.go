@@ -98,9 +98,10 @@ func WriteToDBBatch(ctx context.Context, listURL []models.BatchRequest, uuid str
 		// shortURL := urlgen.GenerateShortKey()
 		_, err := tx.ExecContext(ctx,
 			"INSERT INTO url (shorturl, originalurl, correlationid, url_user_uuid)"+
-				" VALUES($1,$2,$3)", v.ShortURL, v.URL, v.CorrelationID, uuid)
+				" VALUES($1,$2,$3,$4)", v.ShortURL, v.URL, v.CorrelationID, uuid)
 		if err != nil {
-			fmt.Println("error in here")
+			log.Println("error in WriteToDBBatch - writing to DB", err)
+
 			// если ошибка, то откатываем изменения
 			tx.Rollback()
 			return err
