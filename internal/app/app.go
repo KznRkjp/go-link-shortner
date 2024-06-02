@@ -337,7 +337,10 @@ func APIGetUsersURLs(res http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		log.Println(err)
 	}
-	fmt.Println(urls)
+	if len(urls) < 1 {
+		res.WriteHeader(http.StatusNoContent)
+		return
+	}
 	enc := json.NewEncoder(res)
 	var resp []models.UrlResponse
 	for i := range urls {

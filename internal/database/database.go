@@ -279,10 +279,10 @@ func GetUsersUrls(ctx context.Context, uuid string) ([]models.UrlResponse, error
 	defer conn.Close()
 	insertDynStmt := `SELECT shorturl, originalurl FROM url WHERE url_user_uuid = $1`
 	fmt.Println("!!!!!!", uuid)
-	rows, err := conn.QueryContext(ctx, insertDynStmt, uuid)
-	if err != nil {
-		log.Println(err)
-	}
+	rows, _ := conn.QueryContext(ctx, insertDynStmt, uuid)
+	// if err != nil {
+	// 	log.Println(err)
+	// }
 
 	var urls []models.UrlResponse
 	for rows.Next() {
