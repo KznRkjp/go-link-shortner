@@ -164,6 +164,13 @@ func ManageCookie(req *http.Request) (string, string) {
 			token, _ := users.BuildJWTString(uuid) // это надо вернуть в куки.
 			database.UpdateUserToken(req.Context(), uuid, token)
 			return uuid, token
+		} else {
+			uuid, token, err := database.CreateUser(req.Context())
+			if err != nil {
+				log.Println("Error creating user")
+				return uuid, token
+			}
+			return uuid, token
 		}
 	}
 	return uuid, ""
