@@ -271,7 +271,7 @@ func GetOrCreateUser(ctx context.Context, uuid string) (string, string, error) {
 
 }
 
-func GetUsersUrls(ctx context.Context, uuid string) ([]models.UrlResponse, error) {
+func GetUsersUrls(ctx context.Context, uuid string) ([]models.URLResponse, error) {
 	conn, err := sql.Open("pgx", flags.FlagDBString)
 	if err != nil {
 		log.Println(err)
@@ -284,10 +284,10 @@ func GetUsersUrls(ctx context.Context, uuid string) ([]models.UrlResponse, error
 	// 	log.Println(err)
 	// }
 
-	var urls []models.UrlResponse
+	var urls []models.URLResponse
 	for rows.Next() {
-		var url models.UrlResponse
-		if err := rows.Scan(&url.ShortUrl, &url.OriginalURL); err != nil {
+		var url models.URLResponse
+		if err := rows.Scan(&url.ShortURL, &url.OriginalURL); err != nil {
 			return urls, err
 		}
 		urls = append(urls, url)

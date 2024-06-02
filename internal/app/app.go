@@ -342,11 +342,11 @@ func APIGetUsersURLs(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 	enc := json.NewEncoder(res)
-	var resp []models.UrlResponse
+	var resp []models.URLResponse
 	for i := range urls {
-		var newResponseRecord models.UrlResponse
+		var newResponseRecord models.URLResponse
 		newResponseRecord.OriginalURL = urls[i].OriginalURL
-		newResponseRecord.ShortUrl = flags.FlagResURL + "/" + urls[i].ShortUrl
+		newResponseRecord.ShortURL = flags.FlagResURL + "/" + urls[i].ShortURL
 		resp = append(resp, newResponseRecord)
 	}
 	if err := enc.Encode(resp); err != nil {

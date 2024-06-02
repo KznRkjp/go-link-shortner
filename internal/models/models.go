@@ -39,7 +39,7 @@ type BatchResponse struct {
 	URL           string `json:"short_url"`
 }
 
-type UrlResponse struct {
-	ShortUrl    string `json:"short_url"`
+type URLResponse struct {
+	ShortURL    string `json:"short_url"`
 	OriginalURL string `json:"original_url"`
 }
