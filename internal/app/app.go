@@ -349,6 +349,7 @@ func APIGetUsersURLs(res http.ResponseWriter, req *http.Request) {
 		newResponseRecord.ShortURL = flags.FlagResURL + "/" + urls[i].ShortURL
 		resp = append(resp, newResponseRecord)
 	}
+	log.Println(resp)
 	if err := enc.Encode(resp); err != nil {
 		res.WriteHeader(http.StatusInternalServerError)
 		return
