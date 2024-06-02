@@ -324,21 +324,21 @@ func APIBatchGetURL(res http.ResponseWriter, req *http.Request) {
 
 func APIGetUsersURLs(res http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodGet { // Откидываем не Get-запрос
-		fmt.Println("error 0")
+		fmt.Println("error 0 - Method")
 		res.WriteHeader(http.StatusBadRequest)
 		return
 
 	}
 	uuid, err := users.Access(req)
 	if err != nil {
-		fmt.Println("error 1")
+		fmt.Println("error 1 - Access")
 		log.Println(err)
 		res.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 	urls, err := database.GetUsersUrls(req.Context(), uuid)
 	if err != nil {
-		fmt.Println("error 2")
+		fmt.Println("error 2 - DB search")
 		log.Println(err)
 	}
 	if len(urls) < 1 {
@@ -356,7 +356,7 @@ func APIGetUsersURLs(res http.ResponseWriter, req *http.Request) {
 	}
 	log.Println(resp)
 	if err := enc.Encode(resp); err != nil {
-		fmt.Println("error 3")
+		fmt.Println("error 3 - Encoding JSON")
 		res.WriteHeader(http.StatusInternalServerError)
 		return
 	}
