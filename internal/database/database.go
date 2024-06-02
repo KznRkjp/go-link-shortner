@@ -257,11 +257,11 @@ func GetOrCreateUser(ctx context.Context, uuid string) (string, string, error) {
 	if err != nil {
 		log.Println(err)
 		log.Println("Creating new user")
-		newUuid, token, err := CreateUser(ctx)
+		newUUID, token, err := CreateUser(ctx)
 		if err != nil {
-			return newUuid, token, err
+			return newUUID, token, err
 		} else {
-			return newUuid, token, err
+			return newUUID, token, err
 		}
 
 	} else {

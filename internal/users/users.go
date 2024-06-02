@@ -15,22 +15,22 @@ type Claims struct {
 	UserUID string
 }
 
-const TOKEN_EXP = time.Hour * 10
-const SECRET_KEY = "supersecretkey"
+const Token_Exp = time.Hour * 10
+const Secret_Key = "supersecretkey"
 
 func BuildJWTString(uuid string) (string, error) {
 	// создаём новый токен с алгоритмом подписи HS256 и утверждениями — Claims
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, Claims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			// когда создан токен
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(TOKEN_EXP)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(Token_Exp)),
 		},
 		// собственное утверждение
 		UserUID: uuid,
 	})
 
 	// создаём строку токена
-	tokenString, err := token.SignedString([]byte(SECRET_KEY))
+	tokenString, err := token.SignedString([]byte(Secret_Key))
 	if err != nil {
 		return "", err
 	}
@@ -39,7 +39,7 @@ func BuildJWTString(uuid string) (string, error) {
 	return tokenString, nil
 }
 
-func GetUserUId(tokenString string) (string, error) {
+func GetUserUID(tokenString string) (string, error) {
 	fmt.Println("****** starting jwt check")
 	claims := &Claims{}
 	token, err := jwt.ParseWithClaims(tokenString, claims,
@@ -48,7 +48,7 @@ func GetUserUId(tokenString string) (string, error) {
 				fmt.Println("Тут что то не так")
 				return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
 			}
-			return []byte(SECRET_KEY), nil
+			return []byte(Secret_Key), nil
 		})
 	if err != nil {
 		fmt.Println(err)
@@ -70,7 +70,7 @@ func Access(req *http.Request) (string, error) {
 		fmt.Println("cookie error")
 		return "", err
 	}
-	uuid, err := GetUserUId(jwt.Value)
+	uuid, err := GetUserUID(jwt.Value)
 	fmt.Println("Access checked", uuid)
 	return uuid, err
 
