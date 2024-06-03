@@ -55,6 +55,7 @@ func CreateTable() {
 											url_user_uuid TEXT,
 											shorturl TEXT, 
 											originalurl TEXT,
+											deleted_flag BOOLEAN DEFAULT FALSE,
 											CONSTRAINT fk_url_user_uuid FOREIGN KEY (url_user_uuid) REFERENCES url_users (uuid));`
 	_, err = conn.ExecContext(ctx, insertDynStmtURL)
 	if err != nil {
@@ -112,14 +113,14 @@ func WriteToDBBatch(ctx context.Context, listURL []models.BatchRequest, uuid str
 
 }
 
-func GetFromDB(ctx context.Context, shortURL string) (string, error) {
+func GetFromDB(ctx context.Context, shortURL string) (string, bool, error) {
 	conn, err := sql.Open("pgx", flags.FlagDBString)
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
 
 	defer conn.Close()
-	insertDynStmt := `SELECT originalurl FROM url where shorturl = '` + shortURL + `'`
+	insertDynStmt := `SELECT originalurl, deleted_flag FROM url where shorturl = '` + shortURL + `'`
 
 	row := conn.QueryRowContext(ctx,
 		insertDynStmt)
@@ -128,14 +129,15 @@ func GetFromDB(ctx context.Context, shortURL string) (string, error) {
 	// 	return "",err
 	// }
 	var originalurl string
+	var deletedFlag bool
 
-	err = row.Scan(&originalurl)
+	err = row.Scan(&originalurl, &deletedFlag)
 
 	if err != nil {
 		panic(err)
 	}
 
-	return originalurl, err
+	return originalurl, deletedFlag, err
 }
 
 func CheckForDuplicates(ctx context.Context, URL string, URLDb map[string]filesio.URLRecord, uuid string) (string, error) {
@@ -278,7 +280,6 @@ func GetUsersUrls(ctx context.Context, uuid string) ([]models.URLResponse, error
 	}
 	defer conn.Close()
 	insertDynStmt := `SELECT shorturl, originalurl FROM url WHERE url_user_uuid = $1`
-	fmt.Println("!!!!!!", uuid)
 	rows, err := conn.QueryContext(ctx, insertDynStmt, uuid)
 	if err != nil {
 		log.Println(err)
@@ -299,4 +300,25 @@ func GetUsersUrls(ctx context.Context, uuid string) ([]models.URLResponse, error
 	// fmt.Println(urls)
 	return urls, err
 
+}
+
+func DeleteUsersUrls(ctx context.Context, uuid string, urlList []string) error {
+	conn, err := sql.Open("pgx", flags.FlagDBString)
+	if err != nil {
+		log.Println(err)
+	}
+	defer conn.Close()
+	var insertDynStmt = `
+	UPDATE url
+	SET deleted_flag = true
+	WHERE url_user_uuid = $1 and shorturl = $2`
+	for i := range urlList {
+		_, err = conn.ExecContext(ctx, insertDynStmt, uuid, urlList[i])
+		if err != nil {
+			log.Println(err)
+			return err
+		}
+
+	}
+	return nil
 }

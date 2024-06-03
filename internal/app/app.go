@@ -177,7 +177,7 @@ func ManageCookie(req *http.Request) (uuid string, token string) {
 }
 
 func ReturnURL(res http.ResponseWriter, req *http.Request) {
-	if req.Method != http.MethodGet { // Обрабатываем POST-запрос
+	if req.Method != http.MethodGet { // Обрабатываем GET-запрос
 		res.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -185,9 +185,13 @@ func ReturnURL(res http.ResponseWriter, req *http.Request) {
 
 	if flags.FlagDBString != "" {
 
-		resURL, err := database.GetFromDB(req.Context(), shortURL)
+		resURL, deletedFlag, err := database.GetFromDB(req.Context(), shortURL)
 		if err != nil {
 			res.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		if deletedFlag {
+			res.WriteHeader(http.StatusGone)
 			return
 		}
 		res.Header().Set("Location", resURL)
@@ -360,4 +364,38 @@ func APIGetUsersURLs(res http.ResponseWriter, req *http.Request) {
 		res.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+}
+
+func APIDelUsersURLs(res http.ResponseWriter, req *http.Request) {
+	if req.Method != http.MethodDelete { // Откидываем не Get-запрос
+		log.Println("error 0 - Method")
+		res.WriteHeader(http.StatusBadRequest)
+		return
+
+	}
+	uuid, err := users.Access(req)
+	if err != nil {
+		fmt.Println("error 1 - Access")
+		log.Println(err)
+		res.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	// log.Println(uuid) // DELETE
+	var sliceReqJSON []string
+	dec := json.NewDecoder(req.Body)
+	if err := dec.Decode(&sliceReqJSON); err != nil {
+		fmt.Println("parse error")
+		res.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	err = database.DeleteUsersUrls(req.Context(), uuid, sliceReqJSON)
+	if err != nil {
+		res.WriteHeader(http.StatusInternalServerError)
+	}
+	res.WriteHeader(http.StatusAccepted)
+	// for i := range sliceReqJSON {
+	// 	fmt.Println(sliceReqJSON[i])
+	// }
+
 }

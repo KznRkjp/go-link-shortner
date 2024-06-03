@@ -2,6 +2,7 @@ package users
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
@@ -71,7 +72,7 @@ func Access(req *http.Request) (string, error) {
 		return "", err
 	}
 	uuid, err := GetUserUID(jwt.Value)
-	fmt.Println("Access checked", uuid)
+	log.Println("Access checked", uuid)
 	return uuid, err
 
 }
