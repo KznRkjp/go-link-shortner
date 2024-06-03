@@ -55,7 +55,7 @@ func saveData(ctx context.Context, body []byte, uuid string) string {
 
 	} else if len(flags.FlagDBFilePath) > 1 {
 
-		URLDb[url] = filesio.URLRecord{ID: uint(len(URLDb)), ShortURL: url, OriginalURL: string(body)}
+		URLDb[url] = filesio.URLRecord{ID: uint(len(URLDb)), ShortURL: url, OriginalURL: string(body), DeletedFlag: false}
 		//record to file if path is not empty
 
 		producer, err := filesio.NewProducer(flags.FlagDBFilePath)
@@ -81,7 +81,7 @@ func saveDataAPI(ctx context.Context, url string, shortURL string, uuid string) 
 		// URLDb[url] = reqJSON.URL  // записываем в нашу БД
 		// URLDb[url] = filesio.URLRecord{ID: uint(len(URLDb)), ShortURL: url, OriginalURL: reqJSON.URL}
 
-		URLDb[url] = filesio.URLRecord{ID: uint(len(URLDb)), ShortURL: url, OriginalURL: shortURL}
+		URLDb[url] = filesio.URLRecord{ID: uint(len(URLDb)), ShortURL: url, OriginalURL: shortURL, DeletedFlag: false}
 		//record to file if path is not empty
 
 		producer, err := filesio.NewProducer(flags.FlagDBFilePath)
