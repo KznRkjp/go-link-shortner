@@ -158,11 +158,12 @@ func GetURL(res http.ResponseWriter, req *http.Request) {
 func ManageCookie(req *http.Request) (uuid string, token string) {
 	uuid, err := users.Access(req) // Проверям наличие куки, получаем из него uuid
 	if err != nil {
-		fmt.Println("Error in token")
+		log.Println(err)
+		// fmt.Println("Error in token")
 		if uuid != "" { //если удалось получить uuid, но есть проблема в валидностью tokena, делаем новый
-			fmt.Println("starting token update for", uuid)
+			log.Println("starting token update for", uuid)
 			token, _ := users.BuildJWTString(uuid) // это надо вернуть в куки.
-			database.UpdateUserToken(req.Context(), uuid, token)
+			// database.UpdateUserToken(req.Context(), uuid, token)
 			return uuid, token
 		} else {
 			uuid, token, err := database.CreateUser(req.Context())

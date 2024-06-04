@@ -152,18 +152,18 @@ func CheckForDuplicates(ctx context.Context, URL string, URLDb map[string]filesi
 			insertDynStmt := `SELECT shorturl FROM url where originalurl = $1`
 			row := conn.QueryRowContext(ctx,
 				insertDynStmt, URL)
-			fmt.Println("Checking for duplicates")
+			// fmt.Println("Checking for duplicates")
 
 			var shorturl string
 
 			err = row.Scan(&shorturl)
 
 			if err != nil {
-				log.Println("Duplicates not found")
+				// log.Println("Duplicates not found")
 				return "", err
 			}
 
-			fmt.Println("Duplicates found")
+			// fmt.Println("Duplicates found")
 			return shorturl, err
 		}
 		insertDynStmt := `SELECT shorturl FROM url where originalurl = '` + URL + `'`
