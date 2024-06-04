@@ -41,12 +41,12 @@ func BuildJWTString(uuid string) (string, error) {
 }
 
 func GetUserUID(tokenString string) (string, error) {
-	fmt.Println("****** starting jwt check")
+	// fmt.Println("****** starting jwt check")
 	claims := &Claims{}
 	token, err := jwt.ParseWithClaims(tokenString, claims,
 		func(t *jwt.Token) (interface{}, error) {
 			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-				fmt.Println("Тут что то не так")
+				// fmt.Println("Тут что то не так")
 				return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
 			}
 			return []byte(SecretKey), nil
@@ -57,22 +57,22 @@ func GetUserUID(tokenString string) (string, error) {
 	}
 
 	if !token.Valid {
-		fmt.Println("Token is not valid")
+		log.Println("Token is not valid")
 		return claims.UserUID, err
 	}
 
-	fmt.Println("Token is valid")
+	log.Println("Token is valid")
 	return claims.UserUID, err
 }
 
 func Access(req *http.Request) (string, error) {
 	jwt, err := req.Cookie("JWT")
 	if err != nil {
-		fmt.Println("cookie error")
+		// fmt.Println("cookie error")
 		return "", err
 	}
 	uuid, err := GetUserUID(jwt.Value)
-	log.Println("Access checked", uuid)
+	// log.Println("Access checked", uuid)
 	return uuid, err
 
 }

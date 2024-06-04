@@ -284,7 +284,7 @@ func APIBatchGetURL(res http.ResponseWriter, req *http.Request) {
 
 	// Часть про куки
 	uuid, token := ManageCookie(req)
-	fmt.Println(uuid)
+	// fmt.Println(uuid)
 	expiration := time.Now().Add(365 * 24 * time.Hour)
 	cookie := http.Cookie{Name: "JWT", Value: token, Expires: expiration}
 	http.SetCookie(res, &cookie)
