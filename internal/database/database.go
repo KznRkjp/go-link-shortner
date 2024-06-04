@@ -170,10 +170,8 @@ func CheckForDuplicates(ctx context.Context, URL string, URLDb map[string]filesi
 
 		row := conn.QueryRowContext(ctx,
 			insertDynStmt)
-		fmt.Println("Check for duplicates")
 
 		var shorturl string
-
 		err = row.Scan(&shorturl)
 
 		if err != nil {
@@ -312,13 +310,15 @@ func DeleteUsersUrls(ctx context.Context, uuid string, urlList []string) error {
 	UPDATE url
 	SET deleted_flag = true
 	WHERE url_user_uuid = $1 and shorturl = $2`
+	tx, err := conn.Begin()
 	for i := range urlList {
-		_, err = conn.ExecContext(ctx, insertDynStmt, uuid, urlList[i])
+		_, err = tx.ExecContext(ctx, insertDynStmt, uuid, urlList[i])
 		if err != nil {
 			log.Println(err)
+			tx.Rollback()
 			return err
 		}
 
 	}
-	return nil
+	return tx.Commit()
 }
