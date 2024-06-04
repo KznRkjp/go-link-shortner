@@ -391,9 +391,7 @@ func APIDelUsersURLs(res http.ResponseWriter, req *http.Request) {
 	inputCh := generator(sliceReqJSON)
 
 	go database.DeleteUsersUrls(req.Context(), uuid, inputCh)
-	if err != nil {
-		res.WriteHeader(http.StatusInternalServerError)
-	}
+
 	res.WriteHeader(http.StatusAccepted)
 	// for i := range sliceReqJSON {
 	// 	fmt.Println(sliceReqJSON[i])
