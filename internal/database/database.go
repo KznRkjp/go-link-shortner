@@ -312,6 +312,10 @@ func DeleteUsersUrls(ctx context.Context, uuid string, ch chan []string) error {
 			SET deleted_flag = true
 			WHERE url_user_uuid = $1 and shorturl = $2`
 		tx, err := conn.Begin()
+		if err != nil {
+			log.Println(err)
+			return err
+		}
 		for i := range urlList {
 			_, err = tx.ExecContext(ctx, insertDynStmt, uuid, urlList[i])
 			if err != nil {
