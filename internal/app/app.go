@@ -94,7 +94,7 @@ func saveDataAPI(ctx context.Context, url string, shortURL string, uuid string) 
 		}
 	}
 	resultURL := flags.FlagResURL + "/" + url //  склеиваем ответ
-	fmt.Println(URLDb)
+	// fmt.Println(URLDb)
 	return resultURL
 }
 
@@ -132,7 +132,7 @@ func GetURL(res http.ResponseWriter, req *http.Request) {
 	}
 	// Часть про куки
 	uuid, token := ManageCookie(req)
-	fmt.Println(uuid)
+	// fmt.Println(uuid)
 	expiration := time.Now().Add(365 * 24 * time.Hour)
 	cookie := http.Cookie{Name: "JWT", Value: token, Expires: expiration}
 	http.SetCookie(res, &cookie)
@@ -231,7 +231,7 @@ func APIGetURL(res http.ResponseWriter, req *http.Request) {
 	}
 	// Часть про куки
 	uuid, token := ManageCookie(req)
-	fmt.Println(uuid)
+	// fmt.Println(uuid)
 	expiration := time.Now().Add(365 * 24 * time.Hour)
 	cookie := http.Cookie{Name: "JWT", Value: token, Expires: expiration}
 	http.SetCookie(res, &cookie)
@@ -239,7 +239,7 @@ func APIGetURL(res http.ResponseWriter, req *http.Request) {
 
 	dec := json.NewDecoder(req.Body)
 	if err := dec.Decode(&reqJSON); err != nil {
-		fmt.Println("parse error")
+		log.Println(err)
 		res.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -292,7 +292,7 @@ func APIBatchGetURL(res http.ResponseWriter, req *http.Request) {
 
 	dec := json.NewDecoder(req.Body)
 	if err := dec.Decode(&sliceReqJSON); err != nil {
-		fmt.Println("parse error")
+		log.Println(err)
 		res.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -302,7 +302,7 @@ func APIBatchGetURL(res http.ResponseWriter, req *http.Request) {
 	}
 	err := database.WriteToDBBatch(req.Context(), sliceReqJSON, uuid)
 	if err != nil {
-		fmt.Println("error")
+		log.Println(err)
 		res.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -360,7 +360,7 @@ func APIGetUsersURLs(res http.ResponseWriter, req *http.Request) {
 	}
 	log.Println(resp)
 	if err := enc.Encode(resp); err != nil {
-		fmt.Println("error 3 - Encoding JSON")
+		log.Println(err)
 		res.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -384,7 +384,7 @@ func APIDelUsersURLs(res http.ResponseWriter, req *http.Request) {
 	var sliceReqJSON []string
 	dec := json.NewDecoder(req.Body)
 	if err := dec.Decode(&sliceReqJSON); err != nil {
-		fmt.Println("parse error")
+		log.Println(err)
 		res.WriteHeader(http.StatusInternalServerError)
 		return
 	}
