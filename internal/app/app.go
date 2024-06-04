@@ -388,8 +388,9 @@ func APIDelUsersURLs(res http.ResponseWriter, req *http.Request) {
 		res.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	inputCh := generator(sliceReqJSON)
 
-	err = database.DeleteUsersUrls(req.Context(), uuid, sliceReqJSON)
+	go database.DeleteUsersUrls(req.Context(), uuid, inputCh)
 	if err != nil {
 		res.WriteHeader(http.StatusInternalServerError)
 	}
@@ -398,4 +399,16 @@ func APIDelUsersURLs(res http.ResponseWriter, req *http.Request) {
 	// 	fmt.Println(sliceReqJSON[i])
 	// }
 
+}
+
+func generator(input []string) chan []string {
+	inputCh := make(chan []string)
+
+	go func() {
+		defer close(inputCh)
+
+		inputCh <- input
+
+	}()
+	return inputCh
 }

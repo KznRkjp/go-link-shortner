@@ -300,25 +300,29 @@ func GetUsersUrls(ctx context.Context, uuid string) ([]models.URLResponse, error
 
 }
 
-func DeleteUsersUrls(ctx context.Context, uuid string, urlList []string) error {
+func DeleteUsersUrls(ctx context.Context, uuid string, ch chan []string) error {
 	conn, err := sql.Open("pgx", flags.FlagDBString)
 	if err != nil {
 		log.Println(err)
 	}
 	defer conn.Close()
-	var insertDynStmt = `
-	UPDATE url
-	SET deleted_flag = true
-	WHERE url_user_uuid = $1 and shorturl = $2`
-	tx, err := conn.Begin()
-	for i := range urlList {
-		_, err = tx.ExecContext(ctx, insertDynStmt, uuid, urlList[i])
-		if err != nil {
-			log.Println(err)
-			tx.Rollback()
-			return err
-		}
+	for urlList := range ch {
+		var insertDynStmt = `
+			UPDATE url
+			SET deleted_flag = true
+			WHERE url_user_uuid = $1 and shorturl = $2`
+		tx, err := conn.Begin()
+		for i := range urlList {
+			_, err = tx.ExecContext(ctx, insertDynStmt, uuid, urlList[i])
+			if err != nil {
+				log.Println(err)
+				tx.Rollback()
+				return err
+			}
 
+		}
+		return tx.Commit()
 	}
-	return tx.Commit()
+	return nil
+
 }
