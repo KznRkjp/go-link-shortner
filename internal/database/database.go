@@ -306,16 +306,17 @@ func DeleteUsersUrls(ctx context.Context, uuid string, ch chan []string) error {
 		log.Println(err)
 	}
 	defer conn.Close()
+	var insertDynStmt = `
+	UPDATE url
+	SET deleted_flag = true
+	WHERE url_user_uuid = $1 and shorturl = $2`
+	tx, err := conn.Begin()
+
+	if err != nil {
+		log.Println(err)
+		return err
+	}
 	for urlList := range ch {
-		var insertDynStmt = `
-			UPDATE url
-			SET deleted_flag = true
-			WHERE url_user_uuid = $1 and shorturl = $2`
-		tx, err := conn.Begin()
-		if err != nil {
-			log.Println(err)
-			return err
-		}
 		for i := range urlList {
 			_, err = tx.ExecContext(ctx, insertDynStmt, uuid, urlList[i])
 			if err != nil {
@@ -325,8 +326,8 @@ func DeleteUsersUrls(ctx context.Context, uuid string, ch chan []string) error {
 			}
 
 		}
-		return tx.Commit()
+
 	}
-	return nil
+	return tx.Commit()
 
 }
