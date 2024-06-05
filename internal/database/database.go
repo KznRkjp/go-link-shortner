@@ -80,7 +80,7 @@ func WriteToDB(ctx context.Context, url string, originalURL string, correlationI
 		log.Println(err)
 
 	}
-	CreateUser(ctx)
+	// CreateUser(ctx)
 }
 
 func WriteToDBBatch(ctx context.Context, listURL []models.BatchRequest, uuid string) error {
@@ -228,6 +228,7 @@ func UpdateUserToken(ctx context.Context, uuid string, token string) error {
 }
 
 func CreateUser(ctx context.Context) (string, string, error) {
+	log.Println("Creating user - database.CreateUser")
 	conn, err := sql.Open("pgx", flags.FlagDBString)
 	if err != nil {
 		log.Println(err)

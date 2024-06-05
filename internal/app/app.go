@@ -156,6 +156,7 @@ func GetURL(res http.ResponseWriter, req *http.Request) {
 }
 
 func ManageCookie(req *http.Request) (uuid string, token string) {
+	log.Println(req.Cookie("JWT"))
 	uuid, err := users.Access(req) // Проверям наличие куки, получаем из него uuid
 	if err != nil {
 		log.Println(err)
@@ -167,6 +168,7 @@ func ManageCookie(req *http.Request) (uuid string, token string) {
 			return uuid, token
 		} else {
 			uuid, token, err := database.CreateUser(req.Context())
+			// log.Println("Creating user")
 			if err != nil {
 				log.Println("Error creating user")
 				return uuid, token
@@ -174,7 +176,7 @@ func ManageCookie(req *http.Request) (uuid string, token string) {
 			return uuid, token
 		}
 	}
-	return uuid, ""
+	return uuid, token
 }
 
 func ReturnURL(res http.ResponseWriter, req *http.Request) {
@@ -336,7 +338,8 @@ func APIGetUsersURLs(res http.ResponseWriter, req *http.Request) {
 	}
 	uuid, err := users.Access(req)
 	if err != nil {
-		fmt.Println("error 1 - Access")
+		log.Println(req.Host)
+		fmt.Println("error 1 - qqqAccess")
 		log.Println(err)
 		res.WriteHeader(http.StatusUnauthorized)
 		return
@@ -376,7 +379,8 @@ func APIDelUsersURLs(res http.ResponseWriter, req *http.Request) {
 	}
 	uuid, err := users.Access(req)
 	if err != nil {
-		fmt.Println("error 1 - Access")
+		log.Println(req.RequestURI, req.URL, uuid)
+		fmt.Println("error 1 - Accessdfdf")
 		log.Println(err)
 		res.WriteHeader(http.StatusUnauthorized)
 		return
