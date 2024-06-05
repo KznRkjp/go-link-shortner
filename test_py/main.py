@@ -88,7 +88,7 @@ def delete_m_url(list):
         for url_m in item['url_list']:
             data.append(url_m['short_url'].split("/")[-1])
         cookies = dict(JWT=str.lstrip(item['cookie']))
-        print(cookies)
+        # print(cookies)
         x = requests.delete(url, json=data, cookies=cookies)
         # x = requests.delete(url, json=data)
         # if x.status_code != 401:
