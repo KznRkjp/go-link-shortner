@@ -7,8 +7,8 @@ import string
 import time
 from pprint import pprint
 
-THREAD_COUNT = 10
-URL_STREAM_COUNT = 20
+THREAD_COUNT = 3
+URL_STREAM_COUNT = 3
 URL = "http://localhost:8080/"
 
 def callback(i, result):

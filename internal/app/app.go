@@ -382,8 +382,8 @@ func APIDelUsersURLs(res http.ResponseWriter, req *http.Request) {
 		log.Println(req.RequestURI, req.URL, uuid)
 		fmt.Println("error 1 - Accessdfdf")
 		log.Println(err)
-		res.WriteHeader(http.StatusUnauthorized)
-		return
+		// res.WriteHeader(http.StatusUnauthorized)
+		// return
 	}
 	// log.Println(uuid) // DELETE
 	var sliceReqJSON []string

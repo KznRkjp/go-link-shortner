@@ -310,25 +310,19 @@ func DeleteUsersUrls(ctx context.Context, uuid string, ch chan []string) error {
 	var insertDynStmt = `
 	UPDATE url
 	SET deleted_flag = true
-	WHERE url_user_uuid = $1 and shorturl = $2`
-	tx, err := conn.Begin()
-
-	if err != nil {
-		log.Println(err)
-		return err
-	}
+	WHERE shorturl = $1`
+	// WHERE url_user_uuid = $1 and shorturl = $2`
 	for urlList := range ch {
 		for i := range urlList {
-			_, err = tx.Exec(insertDynStmt, uuid, urlList[i])
+			_, err = conn.Exec(insertDynStmt, urlList[i])
+			// _, err = conn.Exec(insertDynStmt, uuid, urlList[i])
 			if err != nil {
 				log.Println(err)
-				tx.Rollback()
 				return err
-			}
 
+			}
 		}
 
 	}
-	return tx.Commit()
-
+	return nil
 }
