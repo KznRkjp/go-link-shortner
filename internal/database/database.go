@@ -318,7 +318,7 @@ func DeleteUsersUrls(ctx context.Context, uuid string, ch chan []string) error {
 	}
 	for urlList := range ch {
 		for i := range urlList {
-			_, err = tx.ExecContext(ctx, insertDynStmt, uuid, urlList[i])
+			_, err = tx.Exec(insertDynStmt, uuid, urlList[i])
 			if err != nil {
 				log.Println(err)
 				tx.Rollback()
