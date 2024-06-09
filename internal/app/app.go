@@ -167,11 +167,13 @@ func ManageCookie(req *http.Request) (uuid string, token string) {
 			// database.UpdateUserToken(req.Context(), uuid, token)
 			return uuid, token
 		} else {
-			uuid, token, err := database.CreateUser(database.DB, req.Context())
-			// log.Println("Creating user")
-			if err != nil {
-				log.Println("Error creating user")
-				return uuid, token
+			if flags.FlagDBString != "" {
+				uuid, token, err := database.CreateUser(database.DB, req.Context())
+				// log.Println("Creating user")
+				if err != nil {
+					log.Println("Error creating user")
+					return uuid, token
+				}
 			}
 			return uuid, token
 		}
@@ -303,7 +305,7 @@ func APIBatchGetURL(res http.ResponseWriter, req *http.Request) {
 	for i := range sliceReqJSON {
 		sliceReqJSON[i].ShortURL = urlgen.GenerateShortKey()
 	}
-	err := database.WriteToDBBatch(req.Context(), sliceReqJSON, uuid)
+	err := database.WriteToDBBatch(database.DB, req.Context(), sliceReqJSON, uuid)
 	if err != nil {
 		log.Println(err)
 		res.WriteHeader(http.StatusInternalServerError)

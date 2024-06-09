@@ -39,12 +39,7 @@ func Ping(res http.ResponseWriter, req *http.Request) {
 
 func CreateTable(db *sql.DB) {
 	fmt.Println("DB String", flags.FlagDBString)
-	// conn, err := sql.Open("pgx", flags.FlagDBString)
-	// if err != nil {
-	// 	// fmt.Println("DB error")
-	// 	log.Panic(err)
-	// }
-	// defer conn.Close()
+
 	ctx := context.Background()
 	insertDynStmtUser := `CREATE TABLE url_users (id SERIAL PRIMARY KEY, uuid TEXT UNIQUE, token TEXT);`
 	var err error
@@ -68,11 +63,7 @@ func CreateTable(db *sql.DB) {
 }
 
 func WriteToDB(db *sql.DB, ctx context.Context, url string, originalURL string, correlationID string, uuid string) {
-	// conn, err := sql.Open("pgx", flags.FlagDBString)
-	// if err != nil {
-	// 	log.Println(err)
-	// }
-	// defer conn.Close()
+
 	insertDynStmt := `insert into "url"("shorturl", "originalurl", "correlationid", "url_user_uuid") values($1, $2, $3, $4)`
 	var err error
 	if correlationID == "nil" {
@@ -89,14 +80,9 @@ func WriteToDB(db *sql.DB, ctx context.Context, url string, originalURL string, 
 	// CreateUser(ctx)
 }
 
-func WriteToDBBatch(ctx context.Context, listURL []models.BatchRequest, uuid string) error {
-	conn, err := sql.Open("pgx", flags.FlagDBString)
-	if err != nil {
-		return err
-	}
-	defer conn.Close()
-	// ctx := context.Background()
-	tx, err := conn.Begin()
+func WriteToDBBatch(db *sql.DB, ctx context.Context, listURL []models.BatchRequest, uuid string) error {
+
+	tx, err := db.Begin()
 	if err != nil {
 		return err
 	}
