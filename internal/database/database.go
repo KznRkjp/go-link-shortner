@@ -39,13 +39,12 @@ func Ping(res http.ResponseWriter, req *http.Request) {
 
 func CreateTable(db *sql.DB) {
 	fmt.Println("DB String", flags.FlagDBString)
-
 	ctx := context.Background()
 	insertDynStmtUser := `CREATE TABLE url_users (id SERIAL PRIMARY KEY, uuid TEXT UNIQUE, token TEXT);`
 	var err error
 	_, err = db.ExecContext(ctx, insertDynStmtUser)
 	if err != nil {
-		log.Println("Database user exists", err)
+		log.Println("Database 'user' exists", err)
 	}
 
 	insertDynStmtURL := `CREATE TABLE url (id SERIAL PRIMARY KEY,
@@ -57,7 +56,7 @@ func CreateTable(db *sql.DB) {
 											CONSTRAINT fk_url_user_uuid FOREIGN KEY (url_user_uuid) REFERENCES url_users (uuid));`
 	_, err = db.ExecContext(ctx, insertDynStmtURL)
 	if err != nil {
-		log.Println("Database url exists", err)
+		log.Println("Database 'url' exists", err)
 	}
 
 }
@@ -117,7 +116,6 @@ func GetFromDB(db *sql.DB, ctx context.Context, shortURL string) (string, bool, 
 	err = row.Scan(&originalurl, &deletedFlag)
 
 	if err != nil {
-		log.Print("here here")
 		log.Print(err)
 	}
 
@@ -201,7 +199,7 @@ func UpdateUserToken(db *sql.DB, ctx context.Context, uuid string, token string)
 }
 
 func CreateUser(db *sql.DB, ctx context.Context) (string, string, error) {
-	log.Println("Creating user - database.CreateUser")
+	// log.Println("Creating user - database.CreateUser")
 
 	uuid := shortuuid.New()
 	insertDynStmt := `insert into "url_users"("uuid", "token") values($1, $2)`

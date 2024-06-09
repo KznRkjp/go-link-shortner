@@ -95,7 +95,7 @@ func saveDataAPI(ctx context.Context, url string, shortURL string, uuid string) 
 		}
 	}
 	resultURL := flags.FlagResURL + "/" + url //  склеиваем ответ
-	// fmt.Println(URLDb)
+
 	return resultURL
 }
 
@@ -133,18 +133,15 @@ func GetURL(res http.ResponseWriter, req *http.Request) {
 	}
 	// Часть про куки
 	uuid, token := ManageCookie(req)
-	// fmt.Println(uuid)
 	expiration := time.Now().Add(365 * 24 * time.Hour)
 	cookie := http.Cookie{Name: "JWT", Value: token, Expires: expiration}
 	http.SetCookie(res, &cookie)
 	// Пока закончили про куки
-	log.Print("Check for dupl")
+
 	shortURL, err := database.CheckForDuplicates(database.DB, req.Context(), string(body), URLDb, uuid)
 
 	if err != nil {
-		log.Print(err)
-		log.Print("No dupl")
-		log.Println(uuid)
+		// log.Print(err)
 		resultURL := saveData(req.Context(), body, uuid)
 		res.Header().Set("content-type", "text/plain")
 		res.WriteHeader(http.StatusCreated)
@@ -161,13 +158,10 @@ func GetURL(res http.ResponseWriter, req *http.Request) {
 }
 
 func ManageCookie(req *http.Request) (uuid string, token string) {
-	log.Println(req.Cookie("JWT"))
-	log.Println("Cookie above")
 	uuid, err := users.Access(req) // Проверям наличие куки, получаем из него uuid
-	log.Println(err)
-	log.Println("uuid=", uuid)
+	// log.Println(err)
 	if err != nil {
-		log.Println(err)
+		// log.Println(err)
 		// fmt.Println("Error in token")
 		if uuid != "" { //если удалось получить uuid, но есть проблема в валидностью tokena, делаем новый
 			log.Println("starting token update for", uuid)
@@ -175,25 +169,20 @@ func ManageCookie(req *http.Request) (uuid string, token string) {
 			// database.UpdateUserToken(req.Context(), uuid, token)
 			return uuid, token
 		} else if uuid == "" {
-			log.Println("Creating new uuid!!!")
 			if flags.FlagDBString != "" {
-				log.Println("Creating new uuid!!! with DB")
+				// log.Println("Creating new uuid!!! with DB")
 				uuid, token, err := database.CreateUser(database.DB, req.Context())
-
 				if err != nil {
-					log.Println("Error creating user")
 					return uuid, token
 				}
 				return uuid, token
 			} else {
-
 				uuid := shortuuid.New()
 				token, err := users.BuildJWTString(uuid)
 				if err != nil {
 					log.Println(err)
 				}
 				return uuid, token
-
 			}
 		}
 	}
@@ -240,13 +229,11 @@ func ReturnURL(res http.ResponseWriter, req *http.Request) {
 		res.Header().Set("Location", resURL)
 
 	}
-
 	res.WriteHeader(http.StatusTemporaryRedirect)
 
 }
 
 func APIGetURL(res http.ResponseWriter, req *http.Request) {
-
 	var reqJSON models.Request
 	if req.Method != http.MethodPost { // Обрабатываем POST-запрос
 		res.WriteHeader(http.StatusBadRequest)
