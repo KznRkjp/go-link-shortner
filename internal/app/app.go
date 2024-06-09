@@ -51,7 +51,7 @@ func saveData(ctx context.Context, body []byte, uuid string) string {
 	url := urlgen.GenerateShortKey()
 
 	if flags.FlagDBString != "" {
-		database.WriteToDB(ctx, url, string(body), "nil", uuid)
+		database.WriteToDB(database.DB, ctx, url, string(body), "nil", uuid)
 
 	} else if len(flags.FlagDBFilePath) > 1 {
 
@@ -75,7 +75,7 @@ func saveData(ctx context.Context, body []byte, uuid string) string {
 func saveDataAPI(ctx context.Context, url string, shortURL string, uuid string) string {
 
 	if flags.FlagDBString != "" {
-		database.WriteToDB(ctx, url, shortURL, "nil", uuid)
+		database.WriteToDB(database.DB, ctx, url, shortURL, "nil", uuid)
 
 	} else if len(flags.FlagDBFilePath) > 1 {
 		// URLDb[url] = reqJSON.URL  // записываем в нашу БД
@@ -138,7 +138,7 @@ func GetURL(res http.ResponseWriter, req *http.Request) {
 	http.SetCookie(res, &cookie)
 	// Пока закончили про куки
 
-	shortURL, err := database.CheckForDuplicates(req.Context(), string(body), URLDb, uuid)
+	shortURL, err := database.CheckForDuplicates(database.DB, req.Context(), string(body), URLDb, uuid)
 
 	if err != nil {
 		resultURL := saveData(req.Context(), body, uuid)
@@ -167,7 +167,7 @@ func ManageCookie(req *http.Request) (uuid string, token string) {
 			// database.UpdateUserToken(req.Context(), uuid, token)
 			return uuid, token
 		} else {
-			uuid, token, err := database.CreateUser(req.Context())
+			uuid, token, err := database.CreateUser(database.DB, req.Context())
 			// log.Println("Creating user")
 			if err != nil {
 				log.Println("Error creating user")
@@ -188,7 +188,7 @@ func ReturnURL(res http.ResponseWriter, req *http.Request) {
 
 	if flags.FlagDBString != "" {
 
-		resURL, deletedFlag, err := database.GetFromDB(req.Context(), shortURL)
+		resURL, deletedFlag, err := database.GetFromDB(database.DB, req.Context(), shortURL)
 		if err != nil {
 			res.WriteHeader(http.StatusBadRequest)
 			return
@@ -246,7 +246,7 @@ func APIGetURL(res http.ResponseWriter, req *http.Request) {
 		res.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	shortURL, err := database.CheckForDuplicates(req.Context(), reqJSON.URL, URLDb, uuid)
+	shortURL, err := database.CheckForDuplicates(database.DB, req.Context(), reqJSON.URL, URLDb, uuid)
 	if err != nil {
 		url := urlgen.GenerateShortKey() // генерируем короткую ссылку
 		resultURL := saveDataAPI(req.Context(), url, reqJSON.URL, uuid)
@@ -344,7 +344,7 @@ func APIGetUsersURLs(res http.ResponseWriter, req *http.Request) {
 		res.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-	urls, err := database.GetUsersUrls(req.Context(), uuid)
+	urls, err := database.GetUsersUrls(database.DB, req.Context(), uuid)
 	if err != nil {
 		fmt.Println("error 2 - DB search")
 		log.Println(err)
@@ -395,7 +395,7 @@ func APIDelUsersURLs(res http.ResponseWriter, req *http.Request) {
 	}
 	inputCh := generator(sliceReqJSON)
 
-	go database.DeleteUsersUrls(req.Context(), uuid, inputCh)
+	go database.DeleteUsersUrls(database.DB, req.Context(), uuid, inputCh)
 
 	res.WriteHeader(http.StatusAccepted)
 	// for i := range sliceReqJSON {

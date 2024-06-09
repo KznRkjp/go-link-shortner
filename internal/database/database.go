@@ -18,6 +18,8 @@ import (
 	"github.com/lithammer/shortuuid"
 )
 
+var DB *sql.DB
+
 func Ping(res http.ResponseWriter, req *http.Request) {
 	// flags.ParseFlags()
 	conn, err := sql.Open("pgx", flags.FlagDBString)
@@ -35,17 +37,18 @@ func Ping(res http.ResponseWriter, req *http.Request) {
 	res.WriteHeader(http.StatusOK)
 }
 
-func CreateTable() {
+func CreateTable(db *sql.DB) {
 	fmt.Println("DB String", flags.FlagDBString)
-	conn, err := sql.Open("pgx", flags.FlagDBString)
-	if err != nil {
-		// fmt.Println("DB error")
-		log.Panic(err)
-	}
-	defer conn.Close()
+	// conn, err := sql.Open("pgx", flags.FlagDBString)
+	// if err != nil {
+	// 	// fmt.Println("DB error")
+	// 	log.Panic(err)
+	// }
+	// defer conn.Close()
 	ctx := context.Background()
 	insertDynStmtUser := `CREATE TABLE url_users (id SERIAL PRIMARY KEY, uuid TEXT UNIQUE, token TEXT);`
-	_, err = conn.ExecContext(ctx, insertDynStmtUser)
+	var err error
+	_, err = db.ExecContext(ctx, insertDynStmtUser)
 	if err != nil {
 		log.Println("Database user exists", err)
 	}
@@ -57,24 +60,27 @@ func CreateTable() {
 											originalurl TEXT,
 											deleted_flag BOOLEAN DEFAULT FALSE,
 											CONSTRAINT fk_url_user_uuid FOREIGN KEY (url_user_uuid) REFERENCES url_users (uuid));`
-	_, err = conn.ExecContext(ctx, insertDynStmtURL)
+	_, err = db.ExecContext(ctx, insertDynStmtURL)
 	if err != nil {
 		log.Println("Database url exists", err)
 	}
 
 }
 
-func WriteToDB(ctx context.Context, url string, originalURL string, correlationID string, uuid string) {
-	conn, err := sql.Open("pgx", flags.FlagDBString)
-	if err != nil {
-		log.Println(err)
-	}
-	defer conn.Close()
+func WriteToDB(db *sql.DB, ctx context.Context, url string, originalURL string, correlationID string, uuid string) {
+	// conn, err := sql.Open("pgx", flags.FlagDBString)
+	// if err != nil {
+	// 	log.Println(err)
+	// }
+	// defer conn.Close()
 	insertDynStmt := `insert into "url"("shorturl", "originalurl", "correlationid", "url_user_uuid") values($1, $2, $3, $4)`
+	var err error
 	if correlationID == "nil" {
-		_, err = conn.ExecContext(ctx, insertDynStmt, url, originalURL, nil, uuid)
+
+		_, err = db.ExecContext(ctx, insertDynStmt, url, originalURL, nil, uuid)
 	} else {
-		_, err = conn.ExecContext(ctx, insertDynStmt, url, originalURL, correlationID, uuid)
+
+		_, err = db.ExecContext(ctx, insertDynStmt, url, originalURL, correlationID, uuid)
 	}
 	if err != nil {
 		log.Println(err)
@@ -113,21 +119,12 @@ func WriteToDBBatch(ctx context.Context, listURL []models.BatchRequest, uuid str
 
 }
 
-func GetFromDB(ctx context.Context, shortURL string) (string, bool, error) {
-	conn, err := sql.Open("pgx", flags.FlagDBString)
-	if err != nil {
-		return "", false, err
-	}
+func GetFromDB(db *sql.DB, ctx context.Context, shortURL string) (string, bool, error) {
 
-	defer conn.Close()
 	insertDynStmt := `SELECT originalurl, deleted_flag FROM url where shorturl = '` + shortURL + `'`
-
-	row := conn.QueryRowContext(ctx,
+	var err error
+	row := db.QueryRowContext(ctx,
 		insertDynStmt)
-
-	// if err != nil {
-	// 	return "",err
-	// }
 	var originalurl string
 	var deletedFlag bool
 
@@ -140,17 +137,18 @@ func GetFromDB(ctx context.Context, shortURL string) (string, bool, error) {
 	return originalurl, deletedFlag, err
 }
 
-func CheckForDuplicates(ctx context.Context, URL string, URLDb map[string]filesio.URLRecord, uuid string) (string, error) {
+func CheckForDuplicates(db *sql.DB, ctx context.Context, URL string, URLDb map[string]filesio.URLRecord, uuid string) (string, error) {
 	if flags.FlagDBString != "" {
-		conn, err := sql.Open("pgx", flags.FlagDBString)
-		if err != nil {
-			return "", err
-		}
-		defer conn.Close()
+		// conn, err := sql.Open("pgx", flags.FlagDBString)
+		// if err != nil {
+		// 	return "", err
+		// }
+		// defer conn.Close()
+		var err error
 		if uuid != "" {
 			// insertDynStmt := `SELECT shorturl FROM url where originalurl = $1 and url_user_uuid = $2`
 			insertDynStmt := `SELECT shorturl FROM url where originalurl = $1`
-			row := conn.QueryRowContext(ctx,
+			row := db.QueryRowContext(ctx,
 				insertDynStmt, URL)
 			// fmt.Println("Checking for duplicates")
 
@@ -168,7 +166,7 @@ func CheckForDuplicates(ctx context.Context, URL string, URLDb map[string]filesi
 		}
 		insertDynStmt := `SELECT shorturl FROM url where originalurl = '` + URL + `'`
 
-		row := conn.QueryRowContext(ctx,
+		row := db.QueryRowContext(ctx,
 			insertDynStmt)
 
 		var shorturl string
@@ -190,35 +188,27 @@ func CheckForDuplicates(ctx context.Context, URL string, URLDb map[string]filesi
 	return "", nil
 }
 
-func GetUserFromDB(ctx context.Context, uuid string) (int, error) {
-	conn, err := sql.Open("pgx", flags.FlagDBString)
-	if err != nil {
-		return -1, err
-	}
-	defer conn.Close()
+func GetUserFromDB(db *sql.DB, ctx context.Context, uuid string) (int, error) {
+	var err error
 	insertDynStmt := `SELECT id FROM url_users where uuid = '` + uuid + `'`
-	row := conn.QueryRowContext(ctx,
+	row := db.QueryRowContext(ctx,
 		insertDynStmt)
 	var id int
 
 	err = row.Scan(&id)
 
 	if err != nil {
-		panic(err)
+		log.Println(err)
 	}
 
 	return id, err
 
 }
 
-func UpdateUserToken(ctx context.Context, uuid string, token string) error {
-	conn, err := sql.Open("pgx", flags.FlagDBString)
-	if err != nil {
-		log.Println(err)
-	}
-	defer conn.Close()
+func UpdateUserToken(db *sql.DB, ctx context.Context, uuid string, token string) error {
+	var err error
 	insertDynStmt := `UPDATE url_users SET token = $2 WHERE uuid = $1`
-	_, err = conn.ExecContext(ctx, insertDynStmt, uuid, token)
+	_, err = db.ExecContext(ctx, insertDynStmt, uuid, token)
 	if err != nil {
 		fmt.Println("Error updating token: ", err)
 		return err
@@ -227,13 +217,9 @@ func UpdateUserToken(ctx context.Context, uuid string, token string) error {
 
 }
 
-func CreateUser(ctx context.Context) (string, string, error) {
+func CreateUser(db *sql.DB, ctx context.Context) (string, string, error) {
 	log.Println("Creating user - database.CreateUser")
-	conn, err := sql.Open("pgx", flags.FlagDBString)
-	if err != nil {
-		log.Println(err)
-	}
-	defer conn.Close()
+
 	uuid := shortuuid.New()
 	insertDynStmt := `insert into "url_users"("uuid", "token") values($1, $2)`
 	token, err := users.BuildJWTString(uuid)
@@ -244,7 +230,7 @@ func CreateUser(ctx context.Context) (string, string, error) {
 
 	}
 
-	_, err = conn.ExecContext(ctx, insertDynStmt, uuid, token)
+	_, err = db.ExecContext(ctx, insertDynStmt, uuid, token)
 	if err != nil {
 		log.Println(err)
 		return "", "", err
@@ -255,11 +241,11 @@ func CreateUser(ctx context.Context) (string, string, error) {
 }
 
 func GetOrCreateUser(ctx context.Context, uuid string) (string, string, error) {
-	_, err := GetUserFromDB(ctx, uuid)
+	_, err := GetUserFromDB(DB, ctx, uuid)
 	if err != nil {
 		log.Println(err)
 		log.Println("Creating new user")
-		newUUID, token, err := CreateUser(ctx)
+		newUUID, token, err := CreateUser(DB, ctx)
 		if err != nil {
 			return newUUID, token, err
 		} else {
@@ -272,14 +258,10 @@ func GetOrCreateUser(ctx context.Context, uuid string) (string, string, error) {
 
 }
 
-func GetUsersUrls(ctx context.Context, uuid string) ([]models.URLResponse, error) {
-	conn, err := sql.Open("pgx", flags.FlagDBString)
-	if err != nil {
-		log.Println(err)
-	}
-	defer conn.Close()
+func GetUsersUrls(db *sql.DB, ctx context.Context, uuid string) ([]models.URLResponse, error) {
+
 	insertDynStmt := `SELECT shorturl, originalurl FROM url WHERE url_user_uuid = $1`
-	rows, err := conn.QueryContext(ctx, insertDynStmt, uuid)
+	rows, err := db.QueryContext(ctx, insertDynStmt, uuid)
 	if err != nil {
 		log.Println(err)
 	}
@@ -301,12 +283,8 @@ func GetUsersUrls(ctx context.Context, uuid string) ([]models.URLResponse, error
 
 }
 
-func DeleteUsersUrls(ctx context.Context, uuid string, ch chan []string) error {
-	conn, err := sql.Open("pgx", flags.FlagDBString)
-	if err != nil {
-		log.Println(err)
-	}
-	defer conn.Close()
+func DeleteUsersUrls(db *sql.DB, ctx context.Context, uuid string, ch chan []string) error {
+	var err error
 	var insertDynStmt = `
 	UPDATE url
 	SET deleted_flag = true
@@ -314,7 +292,7 @@ func DeleteUsersUrls(ctx context.Context, uuid string, ch chan []string) error {
 	// WHERE url_user_uuid = $1 and shorturl = $2`
 	for urlList := range ch {
 		for i := range urlList {
-			_, err = conn.Exec(insertDynStmt, urlList[i])
+			_, err = db.Exec(insertDynStmt, urlList[i])
 			// _, err = conn.Exec(insertDynStmt, uuid, urlList[i])
 			if err != nil {
 				log.Println(err)

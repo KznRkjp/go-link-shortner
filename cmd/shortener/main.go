@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"net/http"
 	"os"
@@ -16,7 +17,13 @@ func main() {
 
 	flags.ParseFlags()
 	if flags.FlagDBString != "" {
-		database.CreateTable()
+		var err error
+		database.DB, err = sql.Open("pgx", flags.FlagDBString)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer database.DB.Close()
+		database.CreateTable(database.DB)
 
 	} else if len(flags.FlagDBFilePath) > 0 {
 		_, err := os.OpenFile(flags.FlagDBFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
