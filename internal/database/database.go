@@ -117,7 +117,8 @@ func GetFromDB(db *sql.DB, ctx context.Context, shortURL string) (string, bool, 
 	err = row.Scan(&originalurl, &deletedFlag)
 
 	if err != nil {
-		panic(err)
+		log.Print("here here")
+		log.Print(err)
 	}
 
 	return originalurl, deletedFlag, err
@@ -125,31 +126,27 @@ func GetFromDB(db *sql.DB, ctx context.Context, shortURL string) (string, bool, 
 
 func CheckForDuplicates(db *sql.DB, ctx context.Context, URL string, URLDb map[string]filesio.URLRecord, uuid string) (string, error) {
 	if flags.FlagDBString != "" {
-		// conn, err := sql.Open("pgx", flags.FlagDBString)
-		// if err != nil {
-		// 	return "", err
-		// }
-		// defer conn.Close()
+
 		var err error
-		if uuid != "" {
-			// insertDynStmt := `SELECT shorturl FROM url where originalurl = $1 and url_user_uuid = $2`
-			insertDynStmt := `SELECT shorturl FROM url where originalurl = $1`
-			row := db.QueryRowContext(ctx,
-				insertDynStmt, URL)
-			// fmt.Println("Checking for duplicates")
+		// if uuid != "" {
+		// 	// insertDynStmt := `SELECT shorturl FROM url where originalurl = $1 and url_user_uuid = $2`
+		// 	insertDynStmt := `SELECT shorturl FROM url where originalurl = $1`
+		// 	row := db.QueryRowContext(ctx,
+		// 		insertDynStmt, URL)
+		// 	// fmt.Println("Checking for duplicates")
 
-			var shorturl string
+		// 	var shorturl string
 
-			err = row.Scan(&shorturl)
+		// 	err = row.Scan(&shorturl)
 
-			if err != nil {
-				// log.Println("Duplicates not found")
-				return "", err
-			}
+		// 	if err != nil {
+		// 		// log.Println("Duplicates not found")
+		// 		return "", err
+		// 	}
 
-			// fmt.Println("Duplicates found")
-			return shorturl, err
-		}
+		// 	// fmt.Println("Duplicates found")
+		// 	return shorturl, err
+		// }
 		insertDynStmt := `SELECT shorturl FROM url where originalurl = '` + URL + `'`
 
 		row := db.QueryRowContext(ctx,

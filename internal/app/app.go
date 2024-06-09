@@ -22,6 +22,7 @@ import (
 	"github.com/KznRkjp/go-link-shortner.git/internal/models"
 	"github.com/KznRkjp/go-link-shortner.git/internal/urlgen"
 	"github.com/KznRkjp/go-link-shortner.git/internal/users"
+	"github.com/lithammer/shortuuid"
 )
 
 func check(e error) {
@@ -137,27 +138,34 @@ func GetURL(res http.ResponseWriter, req *http.Request) {
 	cookie := http.Cookie{Name: "JWT", Value: token, Expires: expiration}
 	http.SetCookie(res, &cookie)
 	// Пока закончили про куки
-
+	log.Print("Check for dupl")
 	shortURL, err := database.CheckForDuplicates(database.DB, req.Context(), string(body), URLDb, uuid)
 
 	if err != nil {
+		log.Print(err)
+		log.Print("No dupl")
+		log.Println(uuid)
 		resultURL := saveData(req.Context(), body, uuid)
 		res.Header().Set("content-type", "text/plain")
 		res.WriteHeader(http.StatusCreated)
 		res.Write([]byte(resultURL))
 
 	} else {
+
 		res.Header().Set("content-type", "text/plain")
 		res.WriteHeader(http.StatusConflict)
 		res.Write([]byte(flags.FlagResURL + "/" + shortURL))
-		fmt.Println(err)
+		log.Println(err)
 	}
 
 }
 
 func ManageCookie(req *http.Request) (uuid string, token string) {
 	log.Println(req.Cookie("JWT"))
+	log.Println("Cookie above")
 	uuid, err := users.Access(req) // Проверям наличие куки, получаем из него uuid
+	log.Println(err)
+	log.Println("uuid=", uuid)
 	if err != nil {
 		log.Println(err)
 		// fmt.Println("Error in token")
@@ -166,16 +174,27 @@ func ManageCookie(req *http.Request) (uuid string, token string) {
 			token, _ := users.BuildJWTString(uuid) // это надо вернуть в куки.
 			// database.UpdateUserToken(req.Context(), uuid, token)
 			return uuid, token
-		} else {
+		} else if uuid == "" {
+			log.Println("Creating new uuid!!!")
 			if flags.FlagDBString != "" {
+				log.Println("Creating new uuid!!! with DB")
 				uuid, token, err := database.CreateUser(database.DB, req.Context())
-				// log.Println("Creating user")
+
 				if err != nil {
 					log.Println("Error creating user")
 					return uuid, token
 				}
+				return uuid, token
+			} else {
+
+				uuid := shortuuid.New()
+				token, err := users.BuildJWTString(uuid)
+				if err != nil {
+					log.Println(err)
+				}
+				return uuid, token
+
 			}
-			return uuid, token
 		}
 	}
 	return uuid, token
