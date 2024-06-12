@@ -9,6 +9,7 @@ type URLRecord struct {
 	ID          uint   `json:"uuid,string"`
 	ShortURL    string `json:"short_url"`
 	OriginalURL string `json:"original_url"`
+	DeletedFlag bool   `json:"is_deleted"`
 }
 
 type Producer struct {

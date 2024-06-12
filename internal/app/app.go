@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"time"
 
 	// "math/rand"
 	"net/http"
@@ -20,6 +21,8 @@ import (
 	"github.com/KznRkjp/go-link-shortner.git/internal/flags"
 	"github.com/KznRkjp/go-link-shortner.git/internal/models"
 	"github.com/KznRkjp/go-link-shortner.git/internal/urlgen"
+	"github.com/KznRkjp/go-link-shortner.git/internal/users"
+	"github.com/lithammer/shortuuid"
 )
 
 func check(e error) {
@@ -44,16 +47,16 @@ func chekIfExists(fileName string) bool {
 	return true
 }
 
-func saveData(ctx context.Context, body []byte) string {
+func saveData(ctx context.Context, body []byte, uuid string) string {
 
 	url := urlgen.GenerateShortKey()
 
 	if flags.FlagDBString != "" {
-		database.WriteToDB(ctx, url, string(body), "nil")
+		database.WriteToDB(database.DB, ctx, url, string(body), "nil", uuid)
 
 	} else if len(flags.FlagDBFilePath) > 1 {
 
-		URLDb[url] = filesio.URLRecord{ID: uint(len(URLDb)), ShortURL: url, OriginalURL: string(body)}
+		URLDb[url] = filesio.URLRecord{ID: uint(len(URLDb)), ShortURL: url, OriginalURL: string(body), DeletedFlag: false}
 		//record to file if path is not empty
 
 		producer, err := filesio.NewProducer(flags.FlagDBFilePath)
@@ -70,16 +73,16 @@ func saveData(ctx context.Context, body []byte) string {
 	return resultURL
 }
 
-func saveDataAPI(ctx context.Context, url string, shortURL string) string {
+func saveDataAPI(ctx context.Context, url string, shortURL string, uuid string) string {
 
 	if flags.FlagDBString != "" {
-		database.WriteToDB(ctx, url, shortURL, "nil")
+		database.WriteToDB(database.DB, ctx, url, shortURL, "nil", uuid)
 
 	} else if len(flags.FlagDBFilePath) > 1 {
 		// URLDb[url] = reqJSON.URL  // записываем в нашу БД
 		// URLDb[url] = filesio.URLRecord{ID: uint(len(URLDb)), ShortURL: url, OriginalURL: reqJSON.URL}
 
-		URLDb[url] = filesio.URLRecord{ID: uint(len(URLDb)), ShortURL: url, OriginalURL: shortURL}
+		URLDb[url] = filesio.URLRecord{ID: uint(len(URLDb)), ShortURL: url, OriginalURL: shortURL, DeletedFlag: false}
 		//record to file if path is not empty
 
 		producer, err := filesio.NewProducer(flags.FlagDBFilePath)
@@ -92,7 +95,7 @@ func saveDataAPI(ctx context.Context, url string, shortURL string) string {
 		}
 	}
 	resultURL := flags.FlagResURL + "/" + url //  склеиваем ответ
-	fmt.Println(URLDb)
+
 	return resultURL
 }
 
@@ -119,36 +122,75 @@ func LoadDB(fileName string) {
 }
 
 func GetURL(res http.ResponseWriter, req *http.Request) {
-
-	if req.Method != http.MethodPost { // Обрабатываем POST-запрос
+	if req.Method != http.MethodPost { // Откидываем не POST-запрос
 		res.WriteHeader(http.StatusBadRequest)
 		return
 	}
-
-	// host := req.Host                // получаем значение нашего хоста
 	body, err := io.ReadAll(req.Body) // достаем данные из body
 	if err != nil {                   // валидация
 		http.Error(res, "can't read body", http.StatusBadRequest)
 		return
 	}
+	// Часть про куки
+	uuid, token := ManageCookie(req)
+	expiration := time.Now().Add(365 * 24 * time.Hour)
+	cookie := http.Cookie{Name: "JWT", Value: token, Expires: expiration}
+	http.SetCookie(res, &cookie)
+	// Пока закончили про куки
 
-	shortURL, err := database.CheckForDuplicates(req.Context(), string(body), URLDb)
+	shortURL, err := database.CheckForDuplicates(database.DB, req.Context(), string(body), URLDb, uuid)
+
 	if err != nil {
-		resultURL := saveData(req.Context(), body)
+		// log.Print(err)
+		resultURL := saveData(req.Context(), body, uuid)
 		res.Header().Set("content-type", "text/plain")
 		res.WriteHeader(http.StatusCreated)
 		res.Write([]byte(resultURL))
+
 	} else {
+
 		res.Header().Set("content-type", "text/plain")
 		res.WriteHeader(http.StatusConflict)
 		res.Write([]byte(flags.FlagResURL + "/" + shortURL))
-
+		log.Println(err)
 	}
 
 }
 
+func ManageCookie(req *http.Request) (uuid string, token string) {
+	uuid, err := users.Access(req) // Проверям наличие куки, получаем из него uuid
+	// log.Println(err)
+	if err != nil {
+		// log.Println(err)
+		// fmt.Println("Error in token")
+		if uuid != "" { //если удалось получить uuid, но есть проблема в валидностью tokena, делаем новый
+			log.Println("starting token update for", uuid)
+			token, _ := users.BuildJWTString(uuid) // это надо вернуть в куки.
+			// database.UpdateUserToken(req.Context(), uuid, token)
+			return uuid, token
+		} else if uuid == "" {
+			if flags.FlagDBString != "" {
+				// log.Println("Creating new uuid!!! with DB")
+				uuid, token, err := database.CreateUser(database.DB, req.Context())
+				if err != nil {
+					return uuid, token
+				}
+				return uuid, token
+			} else {
+				uuid := shortuuid.New()
+				token, err := users.BuildJWTString(uuid)
+				if err != nil {
+					log.Println(err)
+				}
+				return uuid, token
+			}
+		}
+	}
+	return uuid, token
+}
+
 func ReturnURL(res http.ResponseWriter, req *http.Request) {
-	if req.Method != http.MethodGet { // Обрабатываем POST-запрос
+	if req.Method != http.MethodGet { // Обрабатываем GET-запрос
 		res.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -156,9 +198,13 @@ func ReturnURL(res http.ResponseWriter, req *http.Request) {
 
 	if flags.FlagDBString != "" {
 
-		resURL, err := database.GetFromDB(req.Context(), shortURL)
+		resURL, deletedFlag, err := database.GetFromDB(database.DB, req.Context(), shortURL)
 		if err != nil {
 			res.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		if deletedFlag {
+			res.WriteHeader(http.StatusGone)
 			return
 		}
 		res.Header().Set("Location", resURL)
@@ -183,7 +229,6 @@ func ReturnURL(res http.ResponseWriter, req *http.Request) {
 		res.Header().Set("Location", resURL)
 
 	}
-
 	res.WriteHeader(http.StatusTemporaryRedirect)
 
 }
@@ -195,16 +240,24 @@ func APIGetURL(res http.ResponseWriter, req *http.Request) {
 		return
 
 	}
+	// Часть про куки
+	uuid, token := ManageCookie(req)
+	// fmt.Println(uuid)
+	expiration := time.Now().Add(365 * 24 * time.Hour)
+	cookie := http.Cookie{Name: "JWT", Value: token, Expires: expiration}
+	http.SetCookie(res, &cookie)
+	// Пока закончили про куки
+
 	dec := json.NewDecoder(req.Body)
 	if err := dec.Decode(&reqJSON); err != nil {
-		fmt.Println("parse error")
+		log.Println(err)
 		res.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	shortURL, err := database.CheckForDuplicates(req.Context(), reqJSON.URL, URLDb)
+	shortURL, err := database.CheckForDuplicates(database.DB, req.Context(), reqJSON.URL, URLDb, uuid)
 	if err != nil {
 		url := urlgen.GenerateShortKey() // генерируем короткую ссылку
-		resultURL := saveDataAPI(req.Context(), url, reqJSON.URL)
+		resultURL := saveDataAPI(req.Context(), url, reqJSON.URL, uuid)
 		resp := models.Response{
 			Result: resultURL,
 		}
@@ -234,14 +287,23 @@ func APIGetURL(res http.ResponseWriter, req *http.Request) {
 func APIBatchGetURL(res http.ResponseWriter, req *http.Request) {
 	var sliceReqJSON []models.BatchRequest
 	// var reqJSON models.BatchRequest
-	if req.Method != http.MethodPost { // Обрабатываем POST-запрос
+	if req.Method != http.MethodPost { // Откидываем не POST-запрос
 		res.WriteHeader(http.StatusBadRequest)
 		return
 
 	}
+
+	// Часть про куки
+	uuid, token := ManageCookie(req)
+	// fmt.Println(uuid)
+	expiration := time.Now().Add(365 * 24 * time.Hour)
+	cookie := http.Cookie{Name: "JWT", Value: token, Expires: expiration}
+	http.SetCookie(res, &cookie)
+	// Пока закончили про куки
+
 	dec := json.NewDecoder(req.Body)
 	if err := dec.Decode(&sliceReqJSON); err != nil {
-		fmt.Println("parse error")
+		log.Println(err)
 		res.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -249,9 +311,9 @@ func APIBatchGetURL(res http.ResponseWriter, req *http.Request) {
 	for i := range sliceReqJSON {
 		sliceReqJSON[i].ShortURL = urlgen.GenerateShortKey()
 	}
-	err := database.WriteToDBBatch(req.Context(), sliceReqJSON)
+	err := database.WriteToDBBatch(database.DB, req.Context(), sliceReqJSON, uuid)
 	if err != nil {
-		fmt.Println("error")
+		log.Println(err)
 		res.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -273,4 +335,91 @@ func APIBatchGetURL(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+}
+
+func APIGetUsersURLs(res http.ResponseWriter, req *http.Request) {
+	if req.Method != http.MethodGet { // Откидываем не Get-запрос
+		fmt.Println("error 0 - Method")
+		res.WriteHeader(http.StatusBadRequest)
+		return
+
+	}
+	uuid, err := users.Access(req)
+	if err != nil {
+		log.Println(req.Host)
+		fmt.Println("error 1 - qqqAccess")
+		log.Println(err)
+		res.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	urls, err := database.GetUsersUrls(database.DB, req.Context(), uuid)
+	if err != nil {
+		fmt.Println("error 2 - DB search")
+		log.Println(err)
+	}
+	if len(urls) < 1 {
+		res.WriteHeader(http.StatusNoContent)
+		return
+	}
+	res.Header().Set("Content-Type", "application/json")
+	enc := json.NewEncoder(res)
+	var resp []models.URLResponse
+	for i := range urls {
+		var newResponseRecord models.URLResponse
+		newResponseRecord.OriginalURL = urls[i].OriginalURL
+		newResponseRecord.ShortURL = flags.FlagResURL + "/" + urls[i].ShortURL
+		resp = append(resp, newResponseRecord)
+	}
+	log.Println(resp)
+	if err := enc.Encode(resp); err != nil {
+		log.Println(err)
+		res.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+}
+
+func APIDelUsersURLs(res http.ResponseWriter, req *http.Request) {
+	if req.Method != http.MethodDelete { // Откидываем не Get-запрос
+		log.Println("error 0 - Method")
+		res.WriteHeader(http.StatusBadRequest)
+		return
+
+	}
+	uuid, err := users.Access(req)
+	if err != nil {
+		log.Println(req.RequestURI, req.URL, uuid)
+		fmt.Println("error 1 - Accessdfdf")
+		log.Println(err)
+		// res.WriteHeader(http.StatusUnauthorized)
+		// return
+	}
+	// log.Println(uuid) // DELETE
+	var sliceReqJSON []string
+	dec := json.NewDecoder(req.Body)
+	if err := dec.Decode(&sliceReqJSON); err != nil {
+		log.Println(err)
+		res.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	inputCh := generator(sliceReqJSON)
+
+	go database.DeleteUsersUrls(database.DB, req.Context(), uuid, inputCh)
+
+	res.WriteHeader(http.StatusAccepted)
+	// for i := range sliceReqJSON {
+	// 	fmt.Println(sliceReqJSON[i])
+	// }
+
+}
+
+func generator(input []string) chan []string {
+	inputCh := make(chan []string)
+
+	go func() {
+		defer close(inputCh)
+
+		inputCh <- input
+
+	}()
+	return inputCh
 }
