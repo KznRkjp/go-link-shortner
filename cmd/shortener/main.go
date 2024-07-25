@@ -1,3 +1,4 @@
+// Oh this is sooo bad
 package main
 
 import (
