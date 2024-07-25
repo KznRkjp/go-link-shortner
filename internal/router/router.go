@@ -24,5 +24,6 @@ func Main() chi.Router {
 	// r.Get("/api/user/urls", gzipper.GzipMiddleware(app.APIGetUsersURLs))
 	// r.Delete("/api/user/urls", gzipper.GzipMiddleware(app.APIDelUsersURLs))
 	r.Get("/ping", gzipper.GzipMiddleware(database.Ping))
+
 	return r
 }

@@ -11,6 +11,7 @@ import (
 
 	// "math/rand"
 	"net/http"
+
 	"os"
 	"strings"
 
@@ -127,6 +128,7 @@ func GetURL(res http.ResponseWriter, req *http.Request) {
 		res.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	log.Println("GetURL")
 	body, err := io.ReadAll(req.Body) // достаем данные из body
 	if err != nil {                   // валидация
 		http.Error(res, "can't read body", http.StatusBadRequest)
@@ -195,6 +197,7 @@ func ReturnURL(res http.ResponseWriter, req *http.Request) {
 		res.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	log.Println("ReturnURL")
 	shortURL := strings.Trim(req.RequestURI, "/")
 
 	if flags.FlagDBString != "" {

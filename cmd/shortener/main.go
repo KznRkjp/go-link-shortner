@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"log"
 	"net/http"
+	_ "net/http/pprof" // подключаем пакет pprof
+
 	"os"
 
 	"github.com/KznRkjp/go-link-shortner.git/internal/app"
@@ -11,6 +13,10 @@ import (
 	"github.com/KznRkjp/go-link-shortner.git/internal/flags"
 	"github.com/KznRkjp/go-link-shortner.git/internal/middleware/middlelogger"
 	"github.com/KznRkjp/go-link-shortner.git/internal/router"
+)
+
+const (
+	addr = ":8082" // адрес сервера
 )
 
 func main() {
@@ -34,6 +40,7 @@ func main() {
 		app.LoadDB(flags.FlagDBFilePath)
 	}
 	dd := router.Main()
+	go http.ListenAndServe(addr, nil)
 
 	// записываем в лог, что сервер запускается
 	middlelogger.ServerStartLog(flags.FlagRunAddr)
