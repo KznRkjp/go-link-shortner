@@ -77,6 +77,7 @@ func (c *Consumer) ReadEvent() (*URLRecord, error) {
 	return event, nil
 }
 
+// Consumer.Close - закрытие файла для чтения
 func (c *Consumer) Close() error {
 	return c.file.Close()
 }

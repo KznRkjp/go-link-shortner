@@ -6,10 +6,16 @@ import (
 	"os"
 )
 
-// неэкспортированная переменная flagRunAddr содержит адрес и порт для запуска сервера
+// FlagRunAddr содержит адрес и порт для запуска сервера
 var FlagRunAddr string
+
+// FlagResURL содержит адрес сервера для сокращенной ссылки
 var FlagResURL string
+
+// FlagDBFilePath содержит данные для подключения к файлу с данными
 var FlagDBFilePath string
+
+// FlagDBString содержит данные для подключения к БД
 var FlagDBString string
 
 // parseFlags обрабатывает аргументы командной строки
