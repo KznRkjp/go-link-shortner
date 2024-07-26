@@ -7,6 +7,7 @@ import (
 	"go.uber.org/zap"
 )
 
+// Тут мы логгируем именно старт сервера
 func ServerStartLog(addr string) {
 	// создаём предустановленный регистратор zap
 	var sugar1 zap.SugaredLogger
@@ -24,6 +25,7 @@ func ServerStartLog(addr string) {
 
 }
 
+// Логгируем ошибки, сейчас не используется
 func ServerErrorLog(error string) {
 	// создаём предустановленный регистратор zap
 	var sugar1 zap.SugaredLogger
@@ -41,6 +43,7 @@ func ServerErrorLog(error string) {
 
 }
 
+// обертка для логировагния действий сервера с подсчетом времени
 func WithLogging(h http.Handler) http.Handler {
 	logFn := func(w http.ResponseWriter, r *http.Request) {
 		logger, err := zap.NewDevelopment()
