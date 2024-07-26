@@ -9,6 +9,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+// router.Main - запуск роутера chi
 func Main() chi.Router {
 	r := chi.NewRouter()
 	r.Use(middlelogger.WithLogging)
