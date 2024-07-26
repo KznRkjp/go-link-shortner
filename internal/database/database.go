@@ -18,8 +18,10 @@ import (
 	"github.com/lithammer/shortuuid"
 )
 
+// линк к БД, создается в начале и используется при всех запросах к БД
 var DB *sql.DB
 
+// Ping - функция проверки статуса подключения к BD
 func Ping(res http.ResponseWriter, req *http.Request) {
 	// flags.ParseFlags()
 	conn, err := sql.Open("pgx", flags.FlagDBString)
@@ -37,6 +39,8 @@ func Ping(res http.ResponseWriter, req *http.Request) {
 	res.WriteHeader(http.StatusOK)
 }
 
+// CreateTable - функция первоначального создания таблиц, выполняется каждый раз при
+// запуске приложения, если таблицы уже есть - информирует ошибкой
 func CreateTable(db *sql.DB) {
 	fmt.Println("DB String", flags.FlagDBString)
 	ctx := context.Background()
@@ -61,6 +65,7 @@ func CreateTable(db *sql.DB) {
 
 }
 
+// WriteToDB - функция записи одной строки в БД
 func WriteToDB(db *sql.DB, ctx context.Context, url string, originalURL string, correlationID string, uuid string) {
 
 	insertDynStmt := `insert into "url"("shorturl", "originalurl", "correlationid", "url_user_uuid") values($1, $2, $3, $4)`
@@ -79,6 +84,7 @@ func WriteToDB(db *sql.DB, ctx context.Context, url string, originalURL string, 
 	// CreateUser(ctx)
 }
 
+// WriteToDBBatch - функция массовой записи в БД
 func WriteToDBBatch(db *sql.DB, ctx context.Context, listURL []models.BatchRequest, uuid string) error {
 
 	tx, err := db.Begin()
@@ -104,6 +110,7 @@ func WriteToDBBatch(db *sql.DB, ctx context.Context, listURL []models.BatchReque
 
 }
 
+// GetFromDB - функция получения данных их БД
 func GetFromDB(db *sql.DB, ctx context.Context, shortURL string) (string, bool, error) {
 
 	insertDynStmt := `SELECT originalurl, deleted_flag FROM url where shorturl = '` + shortURL + `'`
@@ -122,29 +129,11 @@ func GetFromDB(db *sql.DB, ctx context.Context, shortURL string) (string, bool, 
 	return originalurl, deletedFlag, err
 }
 
+// CheckForDuplicates - преверка есть ли в БД уже такие данные
 func CheckForDuplicates(db *sql.DB, ctx context.Context, URL string, URLDb map[string]filesio.URLRecord, uuid string) (string, error) {
 	if flags.FlagDBString != "" {
 
 		var err error
-		// if uuid != "" {
-		// 	// insertDynStmt := `SELECT shorturl FROM url where originalurl = $1 and url_user_uuid = $2`
-		// 	insertDynStmt := `SELECT shorturl FROM url where originalurl = $1`
-		// 	row := db.QueryRowContext(ctx,
-		// 		insertDynStmt, URL)
-		// 	// fmt.Println("Checking for duplicates")
-
-		// 	var shorturl string
-
-		// 	err = row.Scan(&shorturl)
-
-		// 	if err != nil {
-		// 		// log.Println("Duplicates not found")
-		// 		return "", err
-		// 	}
-
-		// 	// fmt.Println("Duplicates found")
-		// 	return shorturl, err
-		// }
 		insertDynStmt := `SELECT shorturl FROM url where originalurl = '` + URL + `'`
 
 		row := db.QueryRowContext(ctx,
@@ -169,6 +158,7 @@ func CheckForDuplicates(db *sql.DB, ctx context.Context, URL string, URLDb map[s
 	return "", nil
 }
 
+// GetUserFromDB - получение данных пользователя
 func GetUserFromDB(db *sql.DB, ctx context.Context, uuid string) (int, error) {
 	var err error
 	insertDynStmt := `SELECT id FROM url_users where uuid = '` + uuid + `'`
@@ -186,6 +176,7 @@ func GetUserFromDB(db *sql.DB, ctx context.Context, uuid string) (int, error) {
 
 }
 
+// UpdateUserToken - обновлдение токена пользователя в БД, не знаю зачем я его вообще храню, надо переделать логику.
 func UpdateUserToken(db *sql.DB, ctx context.Context, uuid string, token string) error {
 	var err error
 	insertDynStmt := `UPDATE url_users SET token = $2 WHERE uuid = $1`
@@ -198,6 +189,7 @@ func UpdateUserToken(db *sql.DB, ctx context.Context, uuid string, token string)
 
 }
 
+// CreateUser - функция записи данных о пользователе в БД
 func CreateUser(db *sql.DB, ctx context.Context) (string, string, error) {
 	// log.Println("Creating user - database.CreateUser")
 
@@ -221,6 +213,7 @@ func CreateUser(db *sql.DB, ctx context.Context) (string, string, error) {
 
 }
 
+// GetOrCreateUser - функция проверки существования пользователя, если его нет - то вызывается запись
 func GetOrCreateUser(ctx context.Context, uuid string) (string, string, error) {
 	_, err := GetUserFromDB(DB, ctx, uuid)
 	if err != nil {
@@ -239,6 +232,7 @@ func GetOrCreateUser(ctx context.Context, uuid string) (string, string, error) {
 
 }
 
+// GetUsersUrls - функция получения списка URL пользователя из БД
 func GetUsersUrls(db *sql.DB, ctx context.Context, uuid string) ([]models.URLResponse, error) {
 
 	insertDynStmt := `SELECT shorturl, originalurl FROM url WHERE url_user_uuid = $1`
@@ -264,6 +258,7 @@ func GetUsersUrls(db *sql.DB, ctx context.Context, uuid string) ([]models.URLRes
 
 }
 
+// DeleteUsersUrls - функция помечания URLов пользователя как уделенные
 func DeleteUsersUrls(db *sql.DB, ctx context.Context, uuid string, ch chan []string) error {
 	var err error
 	var insertDynStmt = `
