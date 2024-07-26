@@ -195,3 +195,7 @@ func TestAPIGetURL(t *testing.T) {
 		})
 	}
 }
+
+func BenchmarkMain(b *testing.B) {
+
+}
