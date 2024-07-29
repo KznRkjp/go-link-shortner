@@ -9,6 +9,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+// router.Main - запуск роутера chi
 func Main() chi.Router {
 	r := chi.NewRouter()
 	r.Use(middlelogger.WithLogging)
@@ -21,8 +22,7 @@ func Main() chi.Router {
 		r.Get("/", gzipper.GzipMiddleware(app.APIGetUsersURLs))
 		r.Delete("/", gzipper.GzipMiddleware(app.APIDelUsersURLs))
 	})
-	// r.Get("/api/user/urls", gzipper.GzipMiddleware(app.APIGetUsersURLs))
-	// r.Delete("/api/user/urls", gzipper.GzipMiddleware(app.APIDelUsersURLs))
 	r.Get("/ping", gzipper.GzipMiddleware(database.Ping))
+
 	return r
 }

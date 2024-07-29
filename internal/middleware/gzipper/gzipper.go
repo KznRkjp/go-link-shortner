@@ -14,6 +14,7 @@ type compressWriter struct {
 	zw *gzip.Writer
 }
 
+// newCompressWriter - функция создания интерфейса
 func newCompressWriter(w http.ResponseWriter) *compressWriter {
 	return &compressWriter{
 		w:  w,
@@ -21,14 +22,17 @@ func newCompressWriter(w http.ResponseWriter) *compressWriter {
 	}
 }
 
+// передача заголовка без сжатия
 func (c *compressWriter) Header() http.Header {
 	return c.w.Header()
 }
 
+// сжатие тела ответа
 func (c *compressWriter) Write(p []byte) (int, error) {
 	return c.zw.Write(p)
 }
 
+// установка заголовка
 func (c *compressWriter) WriteHeader(statusCode int) {
 	if statusCode < 300 {
 		c.w.Header().Set("Content-Encoding", "gzip")
@@ -48,6 +52,7 @@ type compressReader struct {
 	zr *gzip.Reader
 }
 
+// newCompressReader
 func newCompressReader(r io.ReadCloser) (*compressReader, error) {
 	zr, err := gzip.NewReader(r)
 	if err != nil {
@@ -60,10 +65,12 @@ func newCompressReader(r io.ReadCloser) (*compressReader, error) {
 	}, nil
 }
 
+// compressReader.Read
 func (c compressReader) Read(p []byte) (n int, err error) {
 	return c.zr.Read(p)
 }
 
+// закрытие
 func (c *compressReader) Close() error {
 	if err := c.r.Close(); err != nil {
 		return err
@@ -71,6 +78,7 @@ func (c *compressReader) Close() error {
 	return c.zr.Close()
 }
 
+// GzipMiddleware - все сжимаем.
 func GzipMiddleware(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// по умолчанию устанавливаем оригинальный http.ResponseWriter как тот,

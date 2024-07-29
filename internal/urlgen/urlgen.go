@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+// GenerateShortKey - геренирует случайную строку длиной в 8 символов
 func GenerateShortKey() string {
 	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	const keyLength = 8

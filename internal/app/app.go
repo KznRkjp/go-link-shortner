@@ -1,20 +1,17 @@
+// пакет app содержит основные хэндлеры и функции приложения go-link-shortner
+
 package app
 
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"log"
-	"time"
-
-	// "math/rand"
 	"net/http"
 	"os"
 	"strings"
-
-	// "time"
+	"time"
 
 	"github.com/KznRkjp/go-link-shortner.git/internal/database"
 	"github.com/KznRkjp/go-link-shortner.git/internal/filesio"
@@ -25,44 +22,28 @@ import (
 	"github.com/lithammer/shortuuid"
 )
 
+// check
 func check(e error) {
 	if e != nil {
 		panic(e)
 	}
 }
 
+// переменная резидентной БД. (на случай если у нас ничего другого нет).
 var URLDb = make(map[string]filesio.URLRecord)
 
-// Useless at this point.
-func chekIfExists(fileName string) bool {
-	if _, err := os.Stat(fileName); err == nil {
-		fmt.Println("data file exists")
-
-	} else if errors.Is(err, os.ErrNotExist) {
-		fmt.Println("file does not exist")
-
-	} else {
-		fmt.Println("Dragons be there")
-	}
-	return true
-}
-
+// saveData сохраняет данные в БД или файл, возвращает укороченный URL
+// используется в хэндлерах GetURL
 func saveData(ctx context.Context, body []byte, uuid string) string {
-
 	url := urlgen.GenerateShortKey()
-
 	if flags.FlagDBString != "" {
 		database.WriteToDB(database.DB, ctx, url, string(body), "nil", uuid)
-
 	} else if len(flags.FlagDBFilePath) > 1 {
-
 		URLDb[url] = filesio.URLRecord{ID: uint(len(URLDb)), ShortURL: url, OriginalURL: string(body), DeletedFlag: false}
 		//record to file if path is not empty
-
 		producer, err := filesio.NewProducer(flags.FlagDBFilePath)
 		if err != nil {
 			log.Println(err)
-
 		}
 		defer producer.Close()
 		if err := producer.WriteEvent(&filesio.URLRecord{ID: uint(len(URLDb)), ShortURL: url, OriginalURL: string(body)}); err != nil {
@@ -73,18 +54,14 @@ func saveData(ctx context.Context, body []byte, uuid string) string {
 	return resultURL
 }
 
+// saveDataAPI сохраняет данные в БД или файл, возвращает укороченный URL
+// используется в хэндлерах ApiGetURL
 func saveDataAPI(ctx context.Context, url string, shortURL string, uuid string) string {
-
 	if flags.FlagDBString != "" {
 		database.WriteToDB(database.DB, ctx, url, shortURL, "nil", uuid)
 
 	} else if len(flags.FlagDBFilePath) > 1 {
-		// URLDb[url] = reqJSON.URL  // записываем в нашу БД
-		// URLDb[url] = filesio.URLRecord{ID: uint(len(URLDb)), ShortURL: url, OriginalURL: reqJSON.URL}
-
 		URLDb[url] = filesio.URLRecord{ID: uint(len(URLDb)), ShortURL: url, OriginalURL: shortURL, DeletedFlag: false}
-		//record to file if path is not empty
-
 		producer, err := filesio.NewProducer(flags.FlagDBFilePath)
 		if err != nil {
 			log.Fatal(err)
@@ -95,13 +72,11 @@ func saveDataAPI(ctx context.Context, url string, shortURL string, uuid string) 
 		}
 	}
 	resultURL := flags.FlagResURL + "/" + url //  склеиваем ответ
-
 	return resultURL
 }
 
-// Load data from file containg json records to our im memory DB
+// Load data from file containg json records to our in memory DB
 func LoadDB(fileName string) {
-	chekIfExists(fileName)
 	dat, err := os.ReadFile(fileName)
 	check(err)
 	newDat := strings.Split(string(dat), "\n")
@@ -121,11 +96,14 @@ func LoadDB(fileName string) {
 	}
 }
 
+// GetURL - хэндлер для главной страницы, получает Post запрос
+// с сылкой для сокращения
 func GetURL(res http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodPost { // Откидываем не POST-запрос
 		res.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	log.Println("GetURL")
 	body, err := io.ReadAll(req.Body) // достаем данные из body
 	if err != nil {                   // валидация
 		http.Error(res, "can't read body", http.StatusBadRequest)
@@ -157,12 +135,10 @@ func GetURL(res http.ResponseWriter, req *http.Request) {
 
 }
 
+// ManageCookie берет на себя задачи по управлению проверке выдаче куки.
 func ManageCookie(req *http.Request) (uuid string, token string) {
 	uuid, err := users.Access(req) // Проверям наличие куки, получаем из него uuid
-	// log.Println(err)
 	if err != nil {
-		// log.Println(err)
-		// fmt.Println("Error in token")
 		if uuid != "" { //если удалось получить uuid, но есть проблема в валидностью tokena, делаем новый
 			log.Println("starting token update for", uuid)
 			token, _ := users.BuildJWTString(uuid) // это надо вернуть в куки.
@@ -170,7 +146,6 @@ func ManageCookie(req *http.Request) (uuid string, token string) {
 			return uuid, token
 		} else if uuid == "" {
 			if flags.FlagDBString != "" {
-				// log.Println("Creating new uuid!!! with DB")
 				uuid, token, err := database.CreateUser(database.DB, req.Context())
 				if err != nil {
 					return uuid, token
@@ -189,11 +164,14 @@ func ManageCookie(req *http.Request) (uuid string, token string) {
 	return uuid, token
 }
 
+// ReturnURL возвращает полный URL в обмен на корокую ссылку.
+// обычный GET запрос.
 func ReturnURL(res http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodGet { // Обрабатываем GET-запрос
 		res.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	log.Println("ReturnURL")
 	shortURL := strings.Trim(req.RequestURI, "/")
 
 	if flags.FlagDBString != "" {
@@ -233,6 +211,7 @@ func ReturnURL(res http.ResponseWriter, req *http.Request) {
 
 }
 
+// APIGetURL - хендлер  для /api/shorten  - возвращает json с короткой ссылкой.
 func APIGetURL(res http.ResponseWriter, req *http.Request) {
 	var reqJSON models.Request
 	if req.Method != http.MethodPost { // Обрабатываем POST-запрос
@@ -242,7 +221,6 @@ func APIGetURL(res http.ResponseWriter, req *http.Request) {
 	}
 	// Часть про куки
 	uuid, token := ManageCookie(req)
-	// fmt.Println(uuid)
 	expiration := time.Now().Add(365 * 24 * time.Hour)
 	cookie := http.Cookie{Name: "JWT", Value: token, Expires: expiration}
 	http.SetCookie(res, &cookie)
@@ -283,6 +261,7 @@ func APIGetURL(res http.ResponseWriter, req *http.Request) {
 	}
 }
 
+// APIBatchGetURL - хэндлер для /api/shorten/batch, обрабатывает POST запросы, тип входящих запросов:
 // [{"correlation_id":"8edc229b-b33e-42ad-b5ad-41be395532c6","original_url":"http://xwn34krdyhmz6r.com/tomwj"},{"correlation_id":"9de2b71f-1279-49c9-8081-bbcbac126334","original_url":"http://xae08jvk2j.biz/phqabbnxpiy/jlvxobs77nt"}]
 func APIBatchGetURL(res http.ResponseWriter, req *http.Request) {
 	var sliceReqJSON []models.BatchRequest
@@ -317,9 +296,6 @@ func APIBatchGetURL(res http.ResponseWriter, req *http.Request) {
 		res.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	// for i, s := range sliceReqJSON {
-	// 	fmt.Println(i, s)
-	// }
 	res.Header().Set("Content-Type", "application/json")
 	res.WriteHeader(http.StatusCreated)
 	enc := json.NewEncoder(res)
@@ -337,6 +313,7 @@ func APIBatchGetURL(res http.ResponseWriter, req *http.Request) {
 
 }
 
+// APIGetUsersURLs - хэндлер GET для /api/user/urls, возвращает все сохраненный ссылки пользователя
 func APIGetUsersURLs(res http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodGet { // Откидываем не Get-запрос
 		fmt.Println("error 0 - Method")
@@ -378,6 +355,7 @@ func APIGetUsersURLs(res http.ResponseWriter, req *http.Request) {
 	}
 }
 
+// APIGetUsersURLs - хэндлер Delete для /api/user/urls, удаляет ссылки пользователя
 func APIDelUsersURLs(res http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodDelete { // Откидываем не Get-запрос
 		log.Println("error 0 - Method")
@@ -406,12 +384,10 @@ func APIDelUsersURLs(res http.ResponseWriter, req *http.Request) {
 	go database.DeleteUsersUrls(database.DB, req.Context(), uuid, inputCh)
 
 	res.WriteHeader(http.StatusAccepted)
-	// for i := range sliceReqJSON {
-	// 	fmt.Println(sliceReqJSON[i])
-	// }
 
 }
 
+// генератор каналов
 func generator(input []string) chan []string {
 	inputCh := make(chan []string)
 
