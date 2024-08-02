@@ -14,10 +14,8 @@ func main() {
 	for _, v := range staticcheck.Analyzers {
 		mychecks = append(mychecks, v.Analyzer)
 	}
-	multichecker.Main(
-		printf.Analyzer,
-		shadow.Analyzer,
-		structtag.Analyzer,
-		mychecks,
-	)
+	mychecks = append(mychecks, printf.Analyzer)
+	mychecks = append(mychecks, shadow.Analyzer)
+	mychecks = append(mychecks, structtag.Analyzer)
+	multichecker.Main(mychecks...)
 }
