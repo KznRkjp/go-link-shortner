@@ -7,18 +7,22 @@ import (
 	"golang.org/x/tools/go/analysis"
 )
 
+// Тут переменная для проверки os.Exit
 var ErrCheckAnalyzer = &analysis.Analyzer{
 	Name: "errcheck",
 	Doc:  "check for os.Exit in main",
 	Run:  run,
 }
 
+// Переменная ошибки,
 var errorType = types.Universe.Lookup("error").Type().Underlying().(*types.Interface)
 
+// Вообще маегия
 func isErrorType(t types.Type) bool {
 	return types.Implements(t, errorType)
 }
 
+// Запуск?
 func run(pass *analysis.Pass) (interface{}, error) {
 	expr := func(x *ast.ExprStmt) {
 		// проверяем, что выражение представляет собой вызов функции,
