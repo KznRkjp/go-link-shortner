@@ -28,23 +28,12 @@ var buildDate string
 var buildCommit string
 
 func main() {
-	if buildVersion != "" {
-		fmt.Println("Build version: ", buildVersion)
-	} else {
-		fmt.Println("Build version: N/A")
-	}
-	if buildDate != "" {
-		fmt.Println("Build date: ", buildDate)
-	} else {
-		fmt.Println("Build date: N/A")
-	}
-	if buildCommit != "" {
-		fmt.Println("Build commit: ", buildCommit)
-	} else {
-		fmt.Println("Build commit: N/A")
-	}
+
+	printInfo()
 
 	flags.ParseFlags()
+
+	//DB
 	if flags.FlagDBString != "" {
 		var err error
 		database.DB, err = sql.Open("pgx", flags.FlagDBString) // выбор способа храненеи данных в зависимости от флага.
@@ -60,13 +49,48 @@ func main() {
 		}
 		app.LoadDB(flags.FlagDBFilePath)
 	}
+
 	dd := router.Main()
-	go http.ListenAndServe(addr, nil) // go рутина pprof
-	// записываем в лог, что сервер запускается
-	middlelogger.ServerStartLog(flags.FlagRunAddr)
-	if err := http.ListenAndServe(flags.FlagRunAddr, dd); err != nil {
-		// записываем в лог ошибку, если сервер не запустился
-		middlelogger.ServerStartLog(err.Error())
+	if flags.FlagHTTPSString != "" {
+
+		server := &http.Server{
+			Addr:    ":443",
+			Handler: dd,
+		}
+		go server.ListenAndServeTLS("server.crt", "server.key") // go рутина pprof
+		// записываем в лог, что сервер запускается
+		middlelogger.ServerStartLog(flags.FlagRunAddr)
+		err := server.ListenAndServeTLS("server.crt", "server.key")
+		if err != nil {
+			log.Println(err)
+		}
+
+	} else {
+		go http.ListenAndServe(addr, nil) // go рутина pprof
+		// записываем в лог, что сервер запускается
+		middlelogger.ServerStartLog(flags.FlagRunAddr)
+		if err := http.ListenAndServe(flags.FlagRunAddr, dd); err != nil {
+			// записываем в лог ошибку, если сервер не запустился
+			middlelogger.ServerStartLog(err.Error())
+		}
+	}
+}
+
+func printInfo() {
+	if buildVersion != "" {
+		fmt.Println("Build version: ", buildVersion)
+	} else {
+		fmt.Println("Build version: N/A")
+	}
+	if buildDate != "" {
+		fmt.Println("Build date: ", buildDate)
+	} else {
+		fmt.Println("Build date: N/A")
+	}
+	if buildCommit != "" {
+		fmt.Println("Build commit: ", buildCommit)
+	} else {
+		fmt.Println("Build commit: N/A")
 	}
 
 }
