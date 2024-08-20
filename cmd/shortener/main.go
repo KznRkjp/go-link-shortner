@@ -4,6 +4,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"net/http"
 	_ "net/http/pprof" // подключаем пакет pprof
@@ -22,7 +23,27 @@ const (
 	addr = ":8082" // адрес сервера pprof
 )
 
+var buildVersion string
+var buildDate string
+var buildCommit string
+
 func main() {
+	if buildVersion != "" {
+		fmt.Println("Build version: ", buildVersion)
+	} else {
+		fmt.Println("Build version: N/A")
+	}
+	if buildDate != "" {
+		fmt.Println("Build date: ", buildDate)
+	} else {
+		fmt.Println("Build date: N/A")
+	}
+	if buildCommit != "" {
+		fmt.Println("Build commit: ", buildCommit)
+	} else {
+		fmt.Println("Build commit: N/A")
+	}
+
 	flags.ParseFlags()
 	if flags.FlagDBString != "" {
 		var err error
