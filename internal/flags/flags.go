@@ -18,7 +18,7 @@ var FlagDBFilePath string
 var FlagDBString string
 
 // FlagHTTPSString - при наличии запускает сервер в режиме HTTPS
-var FlagHTTPSString string
+var FlagHTTPSBool bool
 
 // parseFlags обрабатывает аргументы командной строки
 // и сохраняет их значения в соответствующих переменных
@@ -36,7 +36,7 @@ func ParseFlags() {
 	// fmt.Println(ps)
 	flag.StringVar(&FlagDBString, "d", "", "String for DB connection")
 	// регистрируем переменную FlagHTTPSString
-	flag.StringVar(&FlagHTTPSString, "s", "", "HTTPS mode")
+	flag.BoolVar(&FlagHTTPSBool, "s", false, "HTTPS mode")
 	// парсим переданные серверу аргументы в зарегистрированные переменные
 	flag.Parse()
 
@@ -53,6 +53,6 @@ func ParseFlags() {
 		FlagDBString = envDBString
 	}
 	if envHTTPSString := os.Getenv("ENABLE_HTTPS"); envHTTPSString != "" {
-		FlagHTTPSString = envHTTPSString
+		FlagHTTPSBool = true
 	}
 }

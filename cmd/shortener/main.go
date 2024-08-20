@@ -51,7 +51,8 @@ func main() {
 	}
 
 	dd := router.Main()
-	if flags.FlagHTTPSString != "" {
+	//Вот тут мы стартуем в HTTPS если есть флаг
+	if flags.FlagHTTPSBool {
 
 		server := &http.Server{
 			Addr:    ":443",
