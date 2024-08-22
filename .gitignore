@@ -24,3 +24,7 @@ vendor/
 .run
 
 .run
+certificate.crt
+private.key
+cmd/shortener/server.crt
+cmd/shortener/server.key
