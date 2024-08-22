@@ -7,6 +7,7 @@ import (
 	"os"
 )
 
+// Стуркрута для разбора файла конфигурации
 type Config struct {
 	ServerAddress   string `json:"server_address"`
 	BaseURL         string `json:"base_url"`
@@ -19,6 +20,7 @@ type Config struct {
 // 	OpenConfigFile("config.json")
 // }
 
+// Разбор файла конфигурации
 func OpenConfigFile(filename string) (Config, error) {
 	var Conf Config
 	f, err := os.Open(filename)
