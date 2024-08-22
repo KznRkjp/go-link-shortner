@@ -3,11 +3,14 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
 	_ "net/http/pprof" // подключаем пакет pprof
+	"os/signal"
+	"syscall"
 
 	"os"
 
@@ -51,30 +54,67 @@ func main() {
 	}
 
 	dd := router.Main()
+	// через этот канал сообщим основному потоку, что соединения закрыты
+	idleConnsClosed := make(chan struct{})
+	// канал для перенаправления прерываний
+	// поскольку нужно отловить всего одно прерывание,
+	// ёмкости 1 для канала будет достаточно
+	sigint := make(chan os.Signal, 1)
+	// регистрируем перенаправление прерываний
+	signal.Notify(sigint, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, os.Interrupt)
+
+	server := &http.Server{
+		Handler: dd,
+	}
+
 	//Вот тут мы стартуем в HTTPS если есть флаг
 	if flags.FlagHTTPSBool {
-
-		server := &http.Server{
-			Addr:    ":443",
-			Handler: dd,
-		}
+		server.Addr = ":443"
 		go server.ListenAndServeTLS("server.crt", "server.key") // go рутина pprof
 		// записываем в лог, что сервер запускается
 		middlelogger.ServerStartLog(flags.FlagRunAddr)
-		err := server.ListenAndServeTLS("server.crt", "server.key")
-		if err != nil {
-			log.Println(err)
-		}
+		go func() {
+			err := server.ListenAndServeTLS("server.crt", "server.key")
+			if err != nil {
+				log.Println(err)
+			}
+		}()
 
 	} else {
-		go http.ListenAndServe(addr, nil) // go рутина pprof
+		server.Addr = flags.FlagRunAddr
+
+		go server.ListenAndServe() // go рутина pprof
 		// записываем в лог, что сервер запускается
 		middlelogger.ServerStartLog(flags.FlagRunAddr)
-		if err := http.ListenAndServe(flags.FlagRunAddr, dd); err != nil {
-			// записываем в лог ошибку, если сервер не запустился
-			middlelogger.ServerStartLog(err.Error())
-		}
+		go func() {
+			if err := server.ListenAndServe(); err != nil {
+				// записываем в лог ошибку, если сервер не запустился
+				middlelogger.ServerStartLog(err.Error())
+			}
+		}()
 	}
+	go func() {
+		// читаем из канала прерываний
+		// поскольку нужно прочитать только одно прерывание,
+		// можно обойтись без цикла
+		<-sigint
+		// получили сигнал os.Interrupt, запускаем процедуру graceful shutdown
+		if err := server.Shutdown(context.Background()); err != nil {
+			// ошибки закрытия Listener
+			log.Printf("HTTP server Shutdown: %v", err)
+		}
+		// сообщаем основному потоку,
+		// что все сетевые соединения обработаны и закрыты
+		close(idleConnsClosed)
+	}()
+	// ждём завершения процедуры graceful shutdown
+	<-idleConnsClosed
+	// получили оповещение о завершении
+	// здесь можно освобождать ресурсы перед выходом,
+	// например закрыть соединение с базой данных,
+	// закрыть открытые файлы
+	fmt.Println("Server Shutdown gracefully")
+
 }
 
 func printInfo() {
