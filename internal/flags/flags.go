@@ -25,7 +25,6 @@ var FlagDBString string
 // FlagHTTPSString - при наличии запускает сервер в режиме HTTPS
 var FlagHTTPSBool bool
 
-
 // FlagTrustedSubnet - адрес доверенной сети
 var FlagTrustedSubnet string
 
@@ -73,7 +72,6 @@ func ParseFlags() {
 		FlagHTTPSBool = true
 	}
 
-
 	if envTrustedSubnet := os.Getenv("TRUSTED_SUBNET"); envTrustedSubnet != "" {
 		FlagTrustedSubnet = envTrustedSubnet
 	}
@@ -100,7 +98,6 @@ func ParseFlags() {
 			if FlagTrustedSubnet == "" {
 				FlagTrustedSubnet = configuration.TrusedSubnet
 			}
-
 
 		}
 	}
