@@ -301,7 +301,9 @@ func GetStats(db *sql.DB, ctx context.Context) (models.Stats, error) {
 
 	}
 	defer users.Close()
-
+	if url.Err() != nil {
+		log.Println(url.Err())
+	}
 	for url.Next() {
 		err = url.Scan(&result.URLs)
 		if err != nil {
@@ -311,6 +313,9 @@ func GetStats(db *sql.DB, ctx context.Context) (models.Stats, error) {
 		}
 	}
 
+	if users.Err() != nil {
+		log.Println(users.Err())
+	}
 	for users.Next() {
 		err = users.Scan(&result.Users)
 		if err != nil {
