@@ -30,6 +30,7 @@ type URLResponse struct {
 	OriginalURL string `json:"original_url"`
 }
 
+// Stats - структура для ответа по запросу статистики
 type Stats struct {
 	URLs  int `json:"urls"`
 	Users int `json:"users"`
