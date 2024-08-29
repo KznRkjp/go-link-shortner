@@ -15,7 +15,6 @@ type Config struct {
 	DatabaseDSN     string `json:"database_dsn"`
 	EnableHTTPS     bool   `json:"enable_https"`
 	TrusedSubnet    string `json:"trusted_subnet"`
-
 }
 
 // func main() {
