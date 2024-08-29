@@ -66,6 +66,7 @@ func main() {
 	server := &http.Server{
 		Handler: dd,
 	}
+
 	profServer := &http.Server{
 		Handler: dd,
 	}
@@ -78,6 +79,7 @@ func main() {
 		// записываем в лог, что сервер запускается
 		server.Addr = ":443"
 		middlelogger.ServerStartLog(server.Addr)
+
 		go func() {
 			err := server.ListenAndServeTLS("server.crt", "server.key")
 			if err != nil {
@@ -86,6 +88,7 @@ func main() {
 		}()
 
 	} else {
+
 		profServer.Addr = ":8081"
 		log.Println("pprof on port", profServer.Addr)
 		go profServer.ListenAndServe() // go рутина pprof
