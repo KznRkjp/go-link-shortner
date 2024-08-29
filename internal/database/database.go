@@ -280,3 +280,44 @@ func DeleteUsersUrls(db *sql.DB, ctx context.Context, uuid string, ch chan []str
 	}
 	return nil
 }
+
+// GetStats получает данные от ДБ по количеству пользователей и ссылок
+func GetStats(db *sql.DB, ctx context.Context) (models.Stats, error) {
+	var result models.Stats
+	countURLStmt := `SELECT COUNT(*) from url`
+	countUsersStmt := `SELECT COUNT(*) from url_users`
+	url, err := db.QueryContext(ctx, countURLStmt)
+	if err != nil {
+		log.Println(err)
+		return result, err
+
+	}
+	defer url.Close()
+
+	users, err := db.QueryContext(ctx, countUsersStmt)
+	if err != nil {
+		log.Println(err)
+		return result, err
+
+	}
+	defer users.Close()
+
+	for url.Next() {
+		err = url.Scan(&result.URLs)
+		if err != nil {
+			log.Println(err)
+			return result, err
+
+		}
+	}
+
+	for users.Next() {
+		err = users.Scan(&result.Users)
+		if err != nil {
+			log.Println(err)
+			return result, err
+
+		}
+	}
+	return result, err
+}
