@@ -23,6 +23,6 @@ func Main() chi.Router {
 		r.Delete("/", gzipper.GzipMiddleware(app.APIDelUsersURLs))
 	})
 	r.Get("/ping", gzipper.GzipMiddleware(database.Ping))
-
+	r.Get("/api/internal/stats", gzipper.GzipMiddleware(app.APIGetStats))
 	return r
 }

@@ -67,12 +67,19 @@ func main() {
 		Handler: dd,
 	}
 
+	profServer := &http.Server{
+		Handler: dd,
+	}
+
 	//Вот тут мы стартуем в HTTPS если есть флаг
 	if flags.FlagHTTPSBool {
-		server.Addr = ":443"
-		go server.ListenAndServeTLS("server.crt", "server.key") // go рутина pprof
+		profServer.Addr = ":4443"
+		log.Println("pprof on port", profServer.Addr)
+		go profServer.ListenAndServeTLS("server.crt", "server.key") // go рутина pprof
 		// записываем в лог, что сервер запускается
-		middlelogger.ServerStartLog(flags.FlagRunAddr)
+		server.Addr = ":443"
+		middlelogger.ServerStartLog(server.Addr)
+
 		go func() {
 			err := server.ListenAndServeTLS("server.crt", "server.key")
 			if err != nil {
@@ -81,10 +88,12 @@ func main() {
 		}()
 
 	} else {
-		server.Addr = flags.FlagRunAddr
 
-		go server.ListenAndServe() // go рутина pprof
+		profServer.Addr = ":8081"
+		log.Println("pprof on port", profServer.Addr)
+		go profServer.ListenAndServe() // go рутина pprof
 		// записываем в лог, что сервер запускается
+		server.Addr = flags.FlagRunAddr
 		middlelogger.ServerStartLog(flags.FlagRunAddr)
 		go func() {
 			if err := server.ListenAndServe(); err != nil {

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"strings"
@@ -16,6 +17,7 @@ import (
 	"github.com/KznRkjp/go-link-shortner.git/internal/database"
 	"github.com/KznRkjp/go-link-shortner.git/internal/filesio"
 	"github.com/KznRkjp/go-link-shortner.git/internal/flags"
+	"github.com/KznRkjp/go-link-shortner.git/internal/ipresolver"
 	"github.com/KznRkjp/go-link-shortner.git/internal/models"
 	"github.com/KznRkjp/go-link-shortner.git/internal/urlgen"
 	"github.com/KznRkjp/go-link-shortner.git/internal/users"
@@ -398,4 +400,40 @@ func generator(input []string) chan []string {
 
 	}()
 	return inputCh
+}
+
+// APIGetStats - хэндлер для возврата статистики в формате:
+// {
+// "urls": <int>, // количество сокращённых URL в сервисе
+// "users": <int> // количество пользователей в сервисе
+// }
+func APIGetStats(res http.ResponseWriter, req *http.Request) {
+	if req.Method != http.MethodGet { // Откидываем не Get-запрос
+		log.Println("error APIGetStats - wrong method")
+		res.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	var resolveIPOpts ipresolver.ResolveIPOpts
+	resolveIPOpts.UseHeader = false
+	ip, _ := ipresolver.ResolveIP(req, resolveIPOpts)
+	_, netwrkSpace, _ := net.ParseCIDR(flags.FlagTrustedSubnet)
+	if !netwrkSpace.Contains(ip) {
+		res.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	data, err := database.GetStats(database.DB, req.Context())
+	if err != nil {
+		log.Println(err)
+		res.WriteHeader(http.StatusInternalServerError)
+	}
+
+	res.Header().Set("Content-Type", "application/json")
+	jsonResp, err := json.Marshal(data)
+	if err != nil {
+		log.Println(err)
+		res.WriteHeader(http.StatusInternalServerError)
+	}
+
+	res.Write(jsonResp)
 }
