@@ -39,6 +39,7 @@ var URLDb = make(map[string]filesio.URLRecord)
 func SaveData(ctx context.Context, body []byte, uuid string) string {
 	url := urlgen.GenerateShortKey()
 	if flags.FlagDBString != "" {
+		log.Println("DB FLAG")
 		database.WriteToDB(database.DB, ctx, url, string(body), "nil", uuid)
 	} else if len(flags.FlagDBFilePath) > 1 {
 		URLDb[url] = filesio.URLRecord{ID: uint(len(URLDb)), ShortURL: url, OriginalURL: string(body), DeletedFlag: false}

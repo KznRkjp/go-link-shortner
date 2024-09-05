@@ -9,7 +9,6 @@ import (
 	"github.com/KznRkjp/go-link-shortner.git/internal/database"
 	"github.com/KznRkjp/go-link-shortner.git/internal/flags"
 	"github.com/KznRkjp/go-link-shortner.git/internal/users"
-	"github.com/lithammer/shortuuid"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -37,12 +36,13 @@ func (s *GrpcHandlers) ShortenURL(ctx context.Context, in *ShortenURLRequest) (*
 	url := in.LongURL
 	fmt.Println(url)
 	uuid, token := ManageCookieGRPC(ctx)
-	fmt.Println(uuid, token)
+	// fmt.Println(uuid, token)
 	shortURL, err := database.CheckForDuplicates(database.DB, context.Background(), url, app.URLDb, uuid)
 	var resultURL string
 	if err != nil {
 		// log.Print(err)
 		body := []byte(url)
+		fmt.Println(uuid)
 		resultURL = app.SaveData(context.Background(), body, uuid)
 	} else {
 
@@ -60,10 +60,11 @@ func ManageCookieGRPC(ctx context.Context) (uuid string, token string) {
 	if flags.FlagDBString != "" {
 		uuid, token, err := database.CreateUser(database.DB, ctx)
 		if err != nil {
+			fmt.Println("MGGRPC error")
 			log.Println(err)
 			return uuid, token
 		} else {
-			uuid := shortuuid.New()
+			// uuid := shortuuid.New()
 			token, err := users.BuildJWTString(uuid)
 			if err != nil {
 				log.Println(err)
