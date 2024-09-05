@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	_ "net/http/pprof" // подключаем пакет pprof
 	"os/signal"
@@ -17,8 +18,10 @@ import (
 	"github.com/KznRkjp/go-link-shortner.git/internal/app"
 	"github.com/KznRkjp/go-link-shortner.git/internal/database"
 	"github.com/KznRkjp/go-link-shortner.git/internal/flags"
+	pb "github.com/KznRkjp/go-link-shortner.git/internal/grpc"
 	"github.com/KznRkjp/go-link-shortner.git/internal/middleware/middlelogger"
 	"github.com/KznRkjp/go-link-shortner.git/internal/router"
+	"google.golang.org/grpc"
 )
 
 // pprof
@@ -102,6 +105,20 @@ func main() {
 			}
 		}()
 	}
+
+	//gRPC
+	listen, err := net.Listen("tcp", ":8083")
+	if err != nil {
+		log.Fatal(err)
+	}
+	//     // создаём gRPC-сервер без зарегистрированной службы
+	s := grpc.NewServer()
+	pb.RegisterHandlersServer(s, &pb.GrpcHandlers{})
+	log.Println("gRPC server is ready")
+	if err := s.Serve(listen); err != nil {
+		log.Println("gRPC сломался и это хорошо", err)
+	}
+
 	go func() {
 		// читаем из канала прерываний
 		// поскольку нужно прочитать только одно прерывание,
