@@ -10,7 +10,7 @@ message ShortenURLRequest {
 
 message ShortenURLResponse {
     string token = 1;
-    string longURL = 2;
+    string shortURL = 2;
     string error = 3;
 }
 

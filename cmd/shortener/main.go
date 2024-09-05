@@ -107,17 +107,19 @@ func main() {
 	}
 
 	//gRPC
-	listen, err := net.Listen("tcp", ":8083")
-	if err != nil {
-		log.Fatal(err)
-	}
-	//     // создаём gRPC-сервер без зарегистрированной службы
 	s := grpc.NewServer()
-	pb.RegisterHandlersServer(s, &pb.GrpcHandlers{})
-	log.Println("gRPC server is ready")
-	if err := s.Serve(listen); err != nil {
-		log.Println("gRPC сломался и это хорошо", err)
-	}
+	go func() {
+		listen, err := net.Listen("tcp", ":8083")
+		if err != nil {
+			log.Fatal(err)
+		}
+		// создаём gRPC-сервер без зарегистрированной службы
+		pb.RegisterHandlersServer(s, &pb.GrpcHandlers{})
+		log.Println("gRPC server is ready")
+		if err := s.Serve(listen); err != nil {
+			log.Println("gRPC сломался и это хорошо", err)
+		}
+	}()
 
 	go func() {
 		// читаем из канала прерываний

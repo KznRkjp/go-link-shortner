@@ -34,9 +34,9 @@ func check(e error) {
 // переменная резидентной БД. (на случай если у нас ничего другого нет).
 var URLDb = make(map[string]filesio.URLRecord)
 
-// saveData сохраняет данные в БД или файл, возвращает укороченный URL
+// SaveData сохраняет данные в БД или файл, возвращает укороченный URL
 // используется в хэндлерах GetURL
-func saveData(ctx context.Context, body []byte, uuid string) string {
+func SaveData(ctx context.Context, body []byte, uuid string) string {
 	url := urlgen.GenerateShortKey()
 	if flags.FlagDBString != "" {
 		database.WriteToDB(database.DB, ctx, url, string(body), "nil", uuid)
@@ -122,7 +122,7 @@ func GetURL(res http.ResponseWriter, req *http.Request) {
 
 	if err != nil {
 		// log.Print(err)
-		resultURL := saveData(req.Context(), body, uuid)
+		resultURL := SaveData(req.Context(), body, uuid)
 		res.Header().Set("content-type", "text/plain")
 		res.WriteHeader(http.StatusCreated)
 		res.Write([]byte(resultURL))
