@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func Test_saveData(t *testing.T) {
+func Test_SaveData(t *testing.T) {
 	type args struct {
 		ctx  context.Context
 		body []byte
@@ -28,7 +28,7 @@ func Test_saveData(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := saveData(tt.args.ctx, tt.args.body, tt.args.uuid); len([]rune(got)) < tt.want {
+			if got := SaveData(tt.args.ctx, tt.args.body, tt.args.uuid); len([]rune(got)) < tt.want {
 				t.Errorf("saveData() = %v, length is less than %v", got, tt.want)
 			}
 		})
@@ -58,7 +58,7 @@ func BenchmarksaveData(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := saveData(tt.args.ctx, tt.args.body, tt.args.uuid); len([]rune(got)) < tt.want {
+			if got := SaveData(tt.args.ctx, tt.args.body, tt.args.uuid); len([]rune(got)) < tt.want {
 				t.Errorf("saveData() = %v, length is less than %v", got, tt.want)
 			}
 		})
